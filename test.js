@@ -1,3 +1,3 @@
-import { DataTable } from './capytable.js';
+import DataTable from './capytable.js';
 
-const table = new DataTable('table');
+const table = new DataTable('#table');
