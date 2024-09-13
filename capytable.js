@@ -83,10 +83,9 @@ var DataTable = function (selector, options) {
 			if (s.nTable == this ||
 				(s.nTHead && s.nTHead.parentNode == this) ||
 				(s.nTFoot && s.nTFoot.parentNode == this)) {
-				var bRetrieve = oInit.bRetrieve !== undefined ? oInit.bRetrieve : defaults.bRetrieve;
 				var bDestroy = oInit.bDestroy !== undefined ? oInit.bDestroy : defaults.bDestroy;
 
-				if (emptyInit || bRetrieve) {
+				if (emptyInit) {
 					return s.oInstance;
 				}
 				else if (bDestroy) {
@@ -8518,18 +8517,6 @@ DataTable.defaults = {
 	 * the entries.
 	 */
 	"bProcessing": false,
-
-
-	/**
-	 * Retrieve the DataTables object for the given selector. Note that if the
-	 * table has already been initialised, this parameter will cause DataTables
-	 * to simply return the object that has already been set up - it will not take
-	 * account of any changes you might have made to the initialisation object
-	 * passed to DataTables (setting this parameter to true is an acknowledgement
-	 * that you understand this). `destroy` can be used to reinitialise a table if
-	 * you need.
-	 */
-	"bRetrieve": false,
 
 
 	/**
