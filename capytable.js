@@ -167,7 +167,6 @@ var DataTable = function ( selector, options ) {
 			"bAutoWidth",
 			"bSortClasses",
 			"bServerSide",
-			"bDeferRender"
 		]);
 		_fnMap(oSettings, oInit, [
 			"ajax",
@@ -330,9 +329,7 @@ var DataTable = function ( selector, options ) {
 		_fnSortingClasses(oSettings);
 
 		_fnCallbackReg(oSettings, 'aoDrawCallback', function () {
-			if (oSettings.bSorted || _fnDataSource(oSettings) === 'ssp' || features.bDeferRender) {
-				_fnSortingClasses(oSettings);
-			}
+			_fnSortingClasses(oSettings);
 		});
 
 
@@ -2569,7 +2566,7 @@ function _fnAddData ( settings, dataIn, tr, tds )
 	}
 
 	/* Create the DOM information, or register it if already present */
-	if ( tr || ! settings.oFeatures.bDeferRender )
+	if ( tr )
 	{
 		_fnCreateTr( settings, rowIdx, tr, tds );
 	}
@@ -3348,7 +3345,6 @@ function _fnDraw( oSettings, ajaxComplete )
 
 	var anRows = [];
 	var iRowCount = 0;
-	var bServerSide = _fnDataSource( oSettings ) == 'ssp';
 	var aiDisplay = oSettings.aiDisplay;
 	var iDisplayStart = oSettings._iDisplayStart;
 	var iDisplayEnd = oSettings.fnDisplayEnd();
@@ -3364,25 +3360,15 @@ function _fnDraw( oSettings, ajaxComplete )
 		oSettings.iDraw++;
 		_fnProcessingDisplay( oSettings, false );
 	}
-	else if ( !bServerSide )
+	else
 	{
 		oSettings.iDraw++;
-	}
-	else if ( !oSettings.bDestroying && !ajaxComplete)
-	{
-		// Show loading message for server-side processing
-		if (oSettings.iDraw === 0) {
-			body.empty().append(_emptyRow(oSettings));
-		}
-
-		_fnAjaxUpdate( oSettings );
-		return;
 	}
 
 	if ( aiDisplay.length !== 0 )
 	{
-		var iStart = bServerSide ? 0 : iDisplayStart;
-		var iEnd = bServerSide ? oSettings.aoData.length : iDisplayEnd;
+		var iStart = iDisplayStart;
+		var iEnd = iDisplayEnd;
 
 		for ( var j=iStart ; j<iEnd ; j++ )
 		{
@@ -4014,17 +4000,14 @@ function _fnDetectHeader ( settings, thead, write )
  */
 function _fnStart( oSettings )
 {
-	var bServerSide = _fnDataSource( oSettings ) == 'ssp';
 	var iInitDisplayStart = oSettings.iInitDisplayStart;
 
 	// Check and see if we have an initial draw position from state saving
 	if ( iInitDisplayStart !== undefined && iInitDisplayStart !== -1 )
 	{
-		oSettings._iDisplayStart = bServerSide ?
-			iInitDisplayStart :
-			iInitDisplayStart >= oSettings.fnRecordsDisplay() ?
-				0 :
-				iInitDisplayStart;
+		oSettings._iDisplayStart = iInitDisplayStart >= oSettings.fnRecordsDisplay()
+			? 0
+			: iInitDisplayStart;
 
 		oSettings.iInitDisplayStart = -1;
 	}
@@ -6561,10 +6544,7 @@ function _fnRenderer( settings, type )
  */
 function _fnDataSource ( settings )
 {
-	if ( settings.oFeatures.bServerSide ) {
-		return 'ssp';
-	}
-	else if ( settings.ajax ) {
+	if ( settings.ajax ) {
 		return 'ajax';
 	}
 	return 'dom';
@@ -9109,16 +9089,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Deferred rendering can provide DataTables with a huge speed boost when you
-	 * are using an Ajax or JS data source for the table. This option, when set to
-	 * true, will cause DataTables to defer the creation of the table elements for
-	 * each row until they are needed for a draw - saving a significant amount of
-	 * time.
-	 */
-	"bDeferRender": true,
-
-
-	/**
 	 * Replace a DataTable which matches the given selector and replace it with
 	 * one which has the properties of the new initialisation object passed. If no
 	 * table matches the selector, then the new DataTable will be constructed as
@@ -9186,14 +9156,6 @@ DataTable.defaults = {
 	 * the result set will fit within the given Y height.
 	 */
 	"bScrollCollapse": false,
-
-
-	/**
-	 * Configure DataTables to use server-side processing. Note that the
-	 * `ajax` parameter must also be given in order to give DataTables a
-	 * source to obtain the required data for each draw.
-	 */
-	"bServerSide": false,
 
 
 	/**
@@ -10069,16 +10031,6 @@ DataTable.models.oSettings = {
 		"bAutoWidth": null,
 
 		/**
-		 * Delay the creation of TR and TD elements until they are actually
-		 * needed by a driven page draw. This can give a significant speed
-		 * increase for Ajax source and Javascript source data, but makes no
-		 * difference at all for DOM and server-side processing tables.
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 */
-		"bDeferRender": null,
-
-		/**
 		 * Enable filtering on the table or not. Note that if this is disabled
 		 * then there is no filtering at all on the table, including fnFilter.
 		 * To just remove the filtering input use sDom and remove the 'f' option.
@@ -10114,15 +10066,6 @@ DataTable.models.oSettings = {
 		 * set a default use {@link DataTable.defaults}.
 		 */
 		"bProcessing": null,
-
-		/**
-		 * Server-side processing enabled flag - when enabled DataTables will
-		 * get all data from the server for every draw - there is no filtering,
-		 * sorting or paging done on the client-side.
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 */
-		"bServerSide": null,
 
 		/**
 		 * Sorting enablement flag.
@@ -10642,24 +10585,16 @@ DataTable.models.oSettings = {
 	 */
 	"fnDisplayEnd": function ()
 	{
-		var
-			len      = this._iDisplayLength,
+		var len      = this._iDisplayLength,
 			start    = this._iDisplayStart,
 			calc     = start + len,
 			records  = this.aiDisplay.length,
 			features = this.oFeatures,
 			paginate = features.bPaginate;
 
-		if ( features.bServerSide ) {
-			return paginate === false || len === -1 ?
-				start + records :
-				Math.min( start+len, this._iRecordsDisplay );
-		}
-		else {
-			return ! paginate || calc>records || len===-1 ?
-				records :
-				calc;
-		}
+		return !paginate || calc > records || len === -1
+			? records
+			: calc;
 	},
 
 	/**
