@@ -231,15 +231,6 @@ var DataTable = function (selector, options) {
 			oSettings._iDisplayStart = oInit.iDisplayStart;
 		}
 
-		var defer = oInit.iDeferLoading;
-		if (defer !== null) {
-			oSettings.deferLoading = true;
-
-			var tmp = Array.isArray(defer);
-			oSettings._iRecordsDisplay = tmp ? defer[0] : defer;
-			oSettings._iRecordsTotal = tmp ? defer[1] : defer;
-		}
-
 		/*
 			* Columns
 			* See if we should load columns automatically or use defined ones
@@ -3301,14 +3292,7 @@ function _fnDraw(oSettings) {
 	oSettings.bDrawing = true;
 
 	/* Server-side processing draw intercept */
-	if (oSettings.deferLoading) {
-		oSettings.deferLoading = false;
-		oSettings.iDraw++;
-		_fnProcessingDisplay(oSettings, false);
-	}
-	else {
-		oSettings.iDraw++;
-	}
+	oSettings.iDraw++;
 
 	if (aiDisplay.length !== 0) {
 		var iStart = iDisplayStart;
@@ -9050,12 +9034,6 @@ DataTable.defaults = {
 	 * Caption value
 	 */
 	"caption": null,
-
-
-	/**
-	 * For server-side processing - use the data from the DOM for the first draw
-	 */
-	iDeferLoading: null
 };
 
 _fnHungarianMap(DataTable.defaults);
@@ -9960,9 +9938,6 @@ DataTable.models.oSettings = {
 	captionNode: null,
 
 	colgroup: null,
-
-	/** Delay loading of data */
-	deferLoading: null,
 
 	/** Allow auto type detection */
 	typeDetect: true
