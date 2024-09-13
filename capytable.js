@@ -162,7 +162,6 @@ var DataTable = function (selector, options) {
 			"bSort",
 			"bSortMulti",
 			"bInfo",
-			"bProcessing",
 			"bAutoWidth",
 			"bSortClasses",
 			"bServerSide",
@@ -3695,9 +3694,6 @@ function _fnAddOptionsHtml(settings) {
 			renderer(settings, insert, item);
 		});
 	}
-
-	// Processing floats on top, so it isn't an inserted feature
-	_processingHtml(settings);
 }
 
 /**
@@ -4417,37 +4413,6 @@ function _fnPageChange(settings, action, redraw) {
 
 // #endregion
 // #region core.processing.js
-
-/**
- * Generate the node required for the processing node
- *  @param {object} settings DataTables settings object
- */
-function _processingHtml(settings) {
-	var table = settings.nTable;
-	var scrolling = settings.oScroll.sX !== '' || settings.oScroll.sY !== '';
-
-	if (settings.oFeatures.bProcessing) {
-		var n = $('<div/>', {
-			'id': settings.sTableId + '_processing',
-			'class': settings.oClasses.processing.container,
-			'role': 'status'
-		})
-			.html(settings.oLanguage.sProcessing)
-			.append('<div><div></div><div></div><div></div><div></div></div>');
-
-		// Different positioning depending on if scrolling is enabled or not
-		if (scrolling) {
-			n.prependTo($('div.dt-scroll', settings.nTableWrapper));
-		}
-		else {
-			n.insertBefore(table);
-		}
-
-		$(table).on('processing.dt.DT', function (e, s, show) {
-			n.css('display', show ? 'block' : 'none');
-		});
-	}
-}
 
 
 /**
@@ -8511,15 +8476,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Enable or disable the display of a 'processing' indicator when the table is
-	 * being processed (e.g. a sort). This is particularly useful for tables with
-	 * large amounts of data where it can take a noticeable amount of time to sort
-	 * the entries.
-	 */
-	"bProcessing": false,
-
-
-	/**
 	 * When vertical (y) scrolling is enabled, DataTables will force the height of
 	 * the table's viewport to the given height at all times (useful for layout).
 	 * However, this can look odd when filtering data down to a small data set,
@@ -9430,14 +9386,6 @@ DataTable.models.oSettings = {
 		 * set a default use {@link DataTable.defaults}.
 		 */
 		"bPaginate": null,
-
-		/**
-		 * Processing indicator enable flag whenever DataTables is enacting a
-		 * user request - typically an Ajax request for server-side processing.
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 */
-		"bProcessing": null,
 
 		/**
 		 * Sorting enablement flag.
