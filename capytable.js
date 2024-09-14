@@ -3897,8 +3897,6 @@ function _fnFilter(searchRows, settings, input, options, column) {
 /**
  * Build a regular expression object suitable for searching a table
  *  @param {string} sSearch string to search for
- *  @param {bool} bRegex treat as a regular expression or not
- *  @param {bool} bCaseInsensitive Do case insensitive matching or not
  *  @returns {RegExp} constructed object
  *  @memberof DataTable#oApi
  */
@@ -3906,9 +3904,7 @@ function _fnFilterCreateSearch(search, inOpts) {
 	var not = [];
 	var options = $.extend({}, {
 		boundary: false,
-		caseInsensitive: true,
 		exact: false,
-		regex: false,
 	}, inOpts);
 
 	if (typeof search !== 'string') {
@@ -3921,13 +3917,11 @@ function _fnFilterCreateSearch(search, inOpts) {
 	if (options.exact) {
 		return new RegExp(
 			'^' + _fnEscapeRegex(search) + '$',
-			options.caseInsensitive ? 'i' : ''
+			'i'
 		);
 	}
 
-	search = options.regex ?
-		search :
-		_fnEscapeRegex(search);
+	search = _fnEscapeRegex(search);
 
 	/* For smart filtering we want to allow the search to work regardless of
 	 * word order. We also want double quoted text to be preserved, so word
@@ -3983,7 +3977,7 @@ function _fnFilterCreateSearch(search, inOpts) {
 
 	search = '^(?=.*?' + boundary + a.join(')(?=.*?' + boundary) + ')(' + match + '.)*$';
 
-	return new RegExp(search, options.caseInsensitive ? 'i' : '');
+	return new RegExp(search, 'i');
 }
 
 
@@ -7616,21 +7610,9 @@ DataTable.models = {};
  */
 DataTable.models.oSearch = {
 	/**
-	 * Flag to indicate if the filtering should be case insensitive or not
-	 */
-	"caseInsensitive": true,
-
-	/**
 	 * Applied search term
 	 */
 	"search": "",
-
-	/**
-	 * Flag to indicate if the search term should be interpreted as a
-	 * regular expression (true) or not (false) and therefore and special
-	 * regex characters escaped.
-	 */
-	"regex": false,
 
 	/**
 	 * Flag to indicate if DataTables should only trigger a search when
