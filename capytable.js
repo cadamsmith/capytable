@@ -163,17 +163,13 @@ var DataTable = function (selector, options) {
 			"aaSortingFixed",
 			"aLengthMenu",
 			"sPaginationType",
-			"iStateDuration",
 			"sDom",
-			"fnStateLoadCallback",
-			"fnStateSaveCallback",
 			"renderer",
 			"rowId",
 			"caption",
 			"layout",
 			"orderDescReverse",
 			"typeDetect",
-			["iCookieDuration", "iStateDuration"], // backwards compat
 			["oSearch", "oPreviousSearch"],
 			["aoSearchCols", "aoPreSearchCols"],
 			["iDisplayLength", "_iDisplayLength"]
@@ -8058,49 +8054,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Load the table state. With this function you can define from where, and how, the
-	 * state of a table is loaded. By default DataTables will load from `localStorage`
-	 * but you might wish to use a server-side database or cookies.
-	 */
-	"fnStateLoadCallback": function (settings) {
-		try {
-			return JSON.parse(
-				(settings.iStateDuration === -1 ? sessionStorage : localStorage).getItem(
-					'DataTables_' + settings.sInstance + '_' + location.pathname
-				)
-			);
-		} catch (e) {
-			return {};
-		}
-	},
-
-
-	/**
-	 * Save the table state. This function allows you to define where and how the state
-	 * information for the table is stored By default DataTables will use `localStorage`
-	 * but you might wish to use a server-side database or cookies.
-	 */
-	"fnStateSaveCallback": function (settings, data) {
-		try {
-			(settings.iStateDuration === -1 ? sessionStorage : localStorage).setItem(
-				'DataTables_' + settings.sInstance + '_' + location.pathname,
-				JSON.stringify(data)
-			);
-		} catch (e) {
-			// noop
-		}
-	},
-
-
-	/**
-	 * Duration for which the saved state information is considered valid. After this period
-	 * has elapsed the state will be returned to the default.
-	 * Value is given in seconds.
-	 */
-	"iStateDuration": 7200,
-
-
-	/**
 	 * Number of rows to display on a single page when using pagination. If
 	 * feature enabled (`lengthChange`) then the end user will be able to override
 	 * this to a custom setting using a pop-up menu.
@@ -9036,13 +8989,6 @@ DataTable.models.oSettings = {
 	 * Number of paging controls on the page. Only used for backwards compatibility
 	 */
 	pagingControls: 0,
-
-	/**
-	 * The state duration (for `stateSave`) in seconds.
-	 * Note that this parameter will be set by the initialisation routine. To
-	 * set a default use {@link DataTable.defaults}.
-	 */
-	"iStateDuration": 0,
 
 	/**
 	 * Array of callback functions for state saving. Each array element is an
