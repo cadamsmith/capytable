@@ -4686,7 +4686,7 @@ function _fnCalculateColumnWidths(settings) {
 
 		var longest = _fnGetMaxLenString(settings, columnIdx);
 		var autoClass = _ext.type.className[column.sType];
-		var text = longest + column.sContentPadding;
+		var text = longest;
 		var insert = longest.indexOf('<') === -1
 			? document.createTextNode(text)
 			: text
@@ -7803,18 +7803,6 @@ DataTable.models.oColumn = {
 	"sClass": null,
 
 	/**
-	 * When DataTables calculates the column widths to assign to each column,
-	 * it finds the longest string in each column and then constructs a
-	 * temporary table and reads the widths from that. The problem with this
-	 * is that "mmm" is much wider then "iiii", but the latter is a longer
-	 * string - thus the calculation can go wrong (doing it properly and putting
-	 * it into an DOM object and measuring that is horribly(!) slow). Thus as
-	 * a "work around" we provide this option. It will append its value to the
-	 * text that is found to be the longest string for the column - i.e. padding.
-	 */
-	"sContentPadding": null,
-
-	/**
 	 * Allows a default value to be given for a column's data, and will be used
 	 * whenever a null data source is encountered (this can be because mData
 	 * is set to null, or because the data source itself is null).
@@ -8538,19 +8526,6 @@ DataTable.defaults.column = {
 	 * Class to give to each cell in this column.
 	 */
 	"sClass": "",
-
-	/**
-	 * When DataTables calculates the column widths to assign to each column,
-	 * it finds the longest string in each column and then constructs a
-	 * temporary table and reads the widths from that. The problem with this
-	 * is that "mmm" is much wider then "iiii", but the latter is a longer
-	 * string - thus the calculation can go wrong (doing it properly and putting
-	 * it into an DOM object and measuring that is horribly(!) slow). Thus as
-	 * a "work around" we provide this option. It will append its value to the
-	 * text that is found to be the longest string for the column - i.e. padding.
-	 * Generally you shouldn't need this!
-	 */
-	"sContentPadding": "",
 
 
 	/**
