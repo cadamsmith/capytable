@@ -194,7 +194,6 @@ var DataTable = function (selector, options) {
 		_fnCallbackReg(oSettings, 'aoStateLoaded', oInit.fnStateLoaded);
 		_fnCallbackReg(oSettings, 'aoRowCallback', oInit.fnRowCallback);
 		_fnCallbackReg(oSettings, 'aoHeaderCallback', oInit.fnHeaderCallback);
-		_fnCallbackReg(oSettings, 'aoFooterCallback', oInit.fnFooterCallback);
 		_fnCallbackReg(oSettings, 'aoInitComplete', oInit.fnInitComplete);
 		_fnCallbackReg(oSettings, 'aoPreDrawCallback', oInit.fnPreDrawCallback);
 
@@ -8111,13 +8110,6 @@ DataTable.defaults = {
 	 * disabled by the `sortable` option for each column.
 	 */
 	"bSort": true,
-
-
-	/**
-	 * Identical to fnHeaderCallback() but for the table footer this function
-	 * allows you to modify the table footer on every 'draw' event.
-	 */
-	"fnFooterCallback": null,
 
 
 	/**
