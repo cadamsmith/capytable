@@ -1178,19 +1178,6 @@ var _range = function (len, start) {
 	return out;
 };
 
-
-var _removeEmpty = function (a) {
-	var out = [];
-
-	for (var i = 0, ien = a.length; i < ien; i++) {
-		if (a[i]) { // careful - will remove all falsy values!
-			out.push(a[i]);
-		}
-	}
-
-	return out;
-};
-
 // Replaceable function in api.util
 var _stripHtml = function (input) {
 	if (!input || typeof input !== 'string') {
@@ -2633,26 +2620,6 @@ function _fnGetCellData(settings, rowIdx, colIdx, type) {
 	return cellData;
 }
 
-
-/**
- * Set the value for a specific cell, into the internal data cache
- *  @param {object} settings dataTables settings object
- *  @param {int} rowIdx aoData row id
- *  @param {int} colIdx Column index
- *  @param {*} val Value to set
- *  @memberof DataTable#oApi
- */
-function _fnSetCellData(settings, rowIdx, colIdx, val) {
-	var col = settings.aoColumns[colIdx];
-	var rowData = settings.aoData[rowIdx]._aData;
-
-	col.fnSetData(rowData, val, {
-		settings: settings,
-		row: rowIdx,
-		col: colIdx
-	});
-}
-
 /**
  * Write a value to a cell
  * @param {*} td Cell
@@ -2730,79 +2697,6 @@ function _fnClearTable(settings) {
 	settings.aiDisplay.length = 0;
 	settings.aIds = {};
 }
-
-
-/**
- * Mark cached data as invalid such that a re-read of the data will occur when
- * the cached data is next requested. Also update from the data source object.
- *
- * @param {object} settings DataTables settings object
- * @param {int}    rowIdx   Row index to invalidate
- * @param {string} [src]    Source to invalidate from: undefined, 'auto', 'dom'
- *     or 'data'
- * @param {int}    [colIdx] Column index to invalidate. If undefined the whole
- *     row will be invalidated
- * @memberof DataTable#oApi
- *
- * @todo For the modularisation of v1.11 this will need to become a callback, so
- *   the sort and filter methods can subscribe to it. That will required
- *   initialisation options for sorting, which is why it is not already baked in
- */
-function _fnInvalidate(settings, rowIdx, src, colIdx) {
-	var row = settings.aoData[rowIdx];
-	var i, ien;
-
-	// Remove the cached data for the row
-	row._aSortData = null;
-	row._aFilterData = null;
-	row.displayData = null;
-
-	// Are we reading last data from DOM or the data object?
-	if (src === 'dom' || ((!src || src === 'auto') && row.src === 'dom')) {
-		// Read the data from the DOM
-		row._aData = _fnGetRowElements(
-			settings, row, colIdx, colIdx === undefined ? undefined : row._aData
-		)
-			.data;
-	}
-	else {
-		// Reading from data object, update the DOM
-		var cells = row.anCells;
-		var display = _fnGetRowDisplay(settings, rowIdx);
-
-		if (cells) {
-			if (colIdx !== undefined) {
-				_fnWriteCell(cells[colIdx], display[colIdx]);
-			}
-			else {
-				for (i = 0, ien = cells.length; i < ien; i++) {
-					_fnWriteCell(cells[i], display[i]);
-				}
-			}
-		}
-	}
-
-	// Column specific invalidation
-	var cols = settings.aoColumns;
-	if (colIdx !== undefined) {
-		// Type - the data might have changed
-		cols[colIdx].sType = null;
-
-		// Max length string. Its a fairly cheep recalculation, so not worth
-		// something more complicated
-		cols[colIdx].maxLenString = null;
-	}
-	else {
-		for (i = 0, ien = cols.length; i < ien; i++) {
-			cols[i].sType = null;
-			cols[i].maxLenString = null;
-		}
-
-		// Update DataTables special `DT_*` attributes for the row
-		_fnRowAttributes(settings, row);
-	}
-}
-
 
 /**
  * Build a data source object from an HTML row, reading the contents of the
@@ -2985,7 +2879,7 @@ function _fnCreateTr(oSettings, iRow, nTrIn, anTds) {
 			oCol = oSettings.aoColumns[i];
 			create = nTrIn && anTds[i] ? false : true;
 
-			nTd = create ? document.createElement(oCol.sCellType) : anTds[i];
+			nTd = create ? document.createElement("td") : anTds[i];
 
 			if (!nTd) {
 				_fnLog(oSettings, 0, 'Incorrect column count', 18);
@@ -3020,12 +2914,6 @@ function _fnCreateTr(oSettings, iRow, nTrIn, anTds) {
 			}
 			else if (!oCol.bVisible && !create) {
 				nTd.parentNode.removeChild(nTd);
-			}
-
-			if (oCol.fnCreatedCell) {
-				oCol.fnCreatedCell.call(oSettings.oInstance,
-					nTd, _fnGetCellData(oSettings, iRow, i), rowData, iRow, i
-				);
 			}
 		}
 
@@ -8185,14 +8073,6 @@ DataTable.models.oColumn = {
 	"_bAttrSrc": false,
 
 	/**
-	 * Developer definable function that is called whenever a cell is created (Ajax source,
-	 * etc) or processed for input (DOM source). This can be used as a compliment to mRender
-	 * allowing you to modify the DOM element (add background colour for example) when the
-	 * element is available.
-	 */
-	"fnCreatedCell": null,
-
-	/**
 	 * Function to get data from a cell in a column. You should <b>never</b>
 	 * access data directly through _aData internally in DataTables - always use
 	 * the method attached to this property. It allows mData to function as
@@ -9062,16 +8942,6 @@ DataTable.defaults.column = {
 	 */
 	"bVisible": true,
 
-
-	/**
-	 * Developer definable function that is called whenever a cell is created (Ajax source,
-	 * etc) or processed for input (DOM source). This can be used as a compliment to mRender
-	 * allowing you to modify the DOM element (add background colour for example) when the
-	 * element is available.
-	 */
-	"fnCreatedCell": null,
-
-
 	/**
 	 * This property can be used to read data from any data source property,
 	 * including deeply nested objects / properties. `data` can be given in a
@@ -9188,14 +9058,6 @@ DataTable.defaults.column = {
 	 *        data requested.
 	 */
 	"mRender": null,
-
-
-	/**
-	 * Change the cell type created for the column - either TD cells or TH cells. This
-	 * can be useful as TH cells have semantic meaning in the table body, allowing them
-	 * to act as a header for a row (you may wish to add scope='row' to the TH elements).
-	 */
-	"sCellType": "td",
 
 
 	/**
