@@ -162,7 +162,6 @@ var DataTable = function (selector, options) {
 			"bSort",
 			"bInfo",
 			"bAutoWidth",
-			"bSortClasses",
 			"bServerSide",
 		]);
 		_fnMap(oSettings, oInit, [
@@ -1773,7 +1772,6 @@ var _fnCompatMap = function (o, knew, old) {
  */
 function _fnCompatOpts(init) {
 	_fnCompatMap(init, 'ordering', 'bSort');
-	_fnCompatMap(init, 'orderClasses', 'bSortClasses');
 	_fnCompatMap(init, 'order', 'aaSorting');
 	_fnCompatMap(init, 'orderFixed', 'aaSortingFixed');
 	_fnCompatMap(init, 'paging', 'bPaginate');
@@ -5318,7 +5316,7 @@ function _fnSortingClasses(settings) {
 	var features = settings.oFeatures;
 	var i, ien, colIdx;
 
-	if (features.bSort && features.bSortClasses) {
+	if (features.bSort) {
 		// Remove old sorting classes
 		for (i = 0, ien = oldSort.length; i < ien; i++) {
 			colIdx = oldSort[i].src;
@@ -8273,16 +8271,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Enable or disable the addition of the classes `sorting\_1`, `sorting\_2` and
-	 * `sorting\_3` to the columns which are currently being sorted on. This is
-	 * presented as a feature switch as it can increase processing time (while
-	 * classes are removed and added) so for large data sets you might want to
-	 * turn this off.
-	 */
-	"bSortClasses": true,
-
-
-	/**
 	 * Enable or disable state saving. When enabled HTML5 `localStorage` will be
 	 * used to save table display information such as pagination information,
 	 * display length, filtering and sorting. As such when the end user reloads
@@ -9108,15 +9096,6 @@ DataTable.models.oSettings = {
 		 * set a default use {@link DataTable.defaults}.
 		 */
 		"bSort": null,
-
-		/**
-		 * Apply a class to the columns which are being sorted to provide a
-		 * visual highlight or not. This can slow things down when enabled since
-		 * there is a lot of DOM interaction.
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 */
-		"bSortClasses": null,
 
 		/**
 		 * State saving enablement flag.
