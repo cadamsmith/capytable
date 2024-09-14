@@ -172,7 +172,6 @@ var DataTable = function (selector, options) {
 			"aLengthMenu",
 			"sPaginationType",
 			"iStateDuration",
-			"bSortCellsTop",
 			"iTabIndex",
 			"sDom",
 			"fnStateLoadCallback",
@@ -1777,7 +1776,6 @@ var _fnCompatMap = function (o, knew, old) {
 function _fnCompatOpts(init) {
 	_fnCompatMap(init, 'ordering', 'bSort');
 	_fnCompatMap(init, 'orderClasses', 'bSortClasses');
-	_fnCompatMap(init, 'orderCellsTop', 'bSortCellsTop');
 	_fnCompatMap(init, 'order', 'aaSorting');
 	_fnCompatMap(init, 'orderFixed', 'aaSortingFixed');
 	_fnCompatMap(init, 'paging', 'bPaginate');
@@ -4936,25 +4934,14 @@ function _colGroup(settings) {
 
 function _fnSortInit(settings) {
 	var target = settings.nTHead;
-	var headerRows = target.querySelectorAll('tr');
-	var legacyTop = settings.bSortCellsTop;
 	var notSelector = ':not([data-dt-order="disable"]):not([data-dt-order="icon-only"])';
 
-	// Legacy support for `orderCellsTop`
-	if (legacyTop === true) {
-		target = headerRows[0];
-	}
-	else if (legacyTop === false) {
-		target = headerRows[headerRows.length - 1];
-	}
+	var selector = 'tr' + notSelector
+		+ ' th' + notSelector
+		+ ', tr' + notSelector
+		+ ' td' + notSelector;
 
-	_fnSortAttachListener(
-		settings,
-		target,
-		target === settings.nTHead
-			? 'tr' + notSelector + ' th' + notSelector + ', tr' + notSelector + ' td' + notSelector
-			: 'th' + notSelector + ', td' + notSelector
-	);
+	_fnSortAttachListener(settings, target, selector);
 
 	// Need to resolve the user input array into our internal structure
 	var order = [];
@@ -6834,9 +6821,7 @@ var __column_header = function (settings, column, row) {
 	var header = settings.aoHeader;
 	var target = row !== undefined
 		? row
-		: settings.bSortCellsTop // legacy support
-			? 0
-			: header.length - 1;
+		: header.length - 1;
 
 	return header[target][column].cell;
 };
@@ -8290,14 +8275,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Allows control over whether DataTables should use the top (true) unique
-	 * cell that is found for a single column, or the bottom (false - default).
-	 * This is useful when using complex headers.
-	 */
-	"bSortCellsTop": null,
-
-
-	/**
 	 * Enable or disable the addition of the classes `sorting\_1`, `sorting\_2` and
 	 * `sorting\_3` to the columns which are currently being sorted on. This is
 	 * presented as a feature switch as it can increase processing time (while
@@ -9589,15 +9566,6 @@ DataTable.models.oSettings = {
 	"bSorted": false,
 
 	/**
-	 * Indicate that if multiple rows are in the header and there is more than
-	 * one unique cell per column, if the top one (true) or bottom one (false)
-	 * should be used for sorting / title by DataTables.
-	 * Note that this parameter will be set by the initialisation routine. To
-	 * set a default use {@link DataTable.defaults}.
-	 */
-	"bSortCellsTop": null,
-
-	/**
 	 * Initialisation object that is used for the table
 	 */
 	"oInit": null,
@@ -10510,21 +10478,11 @@ $.extend(true, DataTable.ext.renderer, {
 				cell.addClass(classes.order.none);
 			}
 
-			var legacyTop = settings.bSortCellsTop;
-			var headerRows = cell.closest('thead').find('tr');
-			var rowIdx = cell.parent().index();
-
 			// Conditions to not apply the ordering icons
 			if (
 				// Cells and rows which have the attribute to disable the icons
 				cell.attr('data-dt-order') === 'disable' ||
-				cell.parent().attr('data-dt-order') === 'disable' ||
-
-				// Legacy support for `orderCellsTop`. If it is set, then cells
-				// which are not in the top or bottom row of the header (depending
-				// on the value) do not get the sorting classes applied to them
-				(legacyTop === true && rowIdx !== 0) ||
-				(legacyTop === false && rowIdx !== headerRows.length - 1)
+				cell.parent().attr('data-dt-order') === 'disable'
 			) {
 				return;
 			}
