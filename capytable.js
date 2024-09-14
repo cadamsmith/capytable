@@ -169,7 +169,6 @@ var DataTable = function (selector, options) {
 			"fnStateLoadCallback",
 			"fnStateSaveCallback",
 			"renderer",
-			"searchDelay",
 			"rowId",
 			"caption",
 			"layout",
@@ -8438,14 +8437,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Search delay option. This will throttle full table searches that use the
-	 * DataTables provided search input element (it does not effect calls to
-	 * `dt-api search()`, providing a delay before the search is made.
-	 */
-	"searchDelay": null,
-
-
-	/**
 	 * DataTables features six different built-in options for the buttons to
 	 * display for pagination control:
 	 *
@@ -9097,11 +9088,6 @@ DataTable.models.oSettings = {
 	 * set a default use {@link DataTable.defaults}.
 	 */
 	"sDom": null,
-
-	/**
-	 * Search delay (in mS)
-	 */
-	"searchDelay": null,
 
 	/**
 	 * Which type of pagination should be used.
@@ -10517,19 +10503,10 @@ DataTable.feature.register('search', function (settings, opts) {
 		}
 	};
 
-	var searchDelay = settings.searchDelay !== null ?
-		settings.searchDelay :
-		0;
-
 	var jqFilter = $('input', filter)
 		.val(previousSearch.search)
 		.attr('placeholder', opts.placeholder)
-		.on(
-			'keyup.DT search.DT input.DT paste.DT cut.DT',
-			searchDelay ?
-				DataTable.util.debounce(searchFn, searchDelay) :
-				searchFn
-		)
+		.on('keyup.DT search.DT input.DT paste.DT cut.DT', searchFn)
 		.on('mouseup.DT', function (e) {
 			// Edge fix! Edge 17 does not trigger anything other than mouse events when clicking
 			// on the clear icon (Edge bug 17584515). This is safe in other browsers as `searchFn`
