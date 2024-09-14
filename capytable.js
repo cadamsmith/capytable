@@ -201,7 +201,6 @@ var DataTable = function (selector, options) {
 		_fnCallbackReg(oSettings, 'aoStateLoadParams', oInit.fnStateLoadParams);
 		_fnCallbackReg(oSettings, 'aoStateLoaded', oInit.fnStateLoaded);
 		_fnCallbackReg(oSettings, 'aoRowCallback', oInit.fnRowCallback);
-		_fnCallbackReg(oSettings, 'aoRowCreatedCallback', oInit.fnCreatedRow);
 		_fnCallbackReg(oSettings, 'aoHeaderCallback', oInit.fnHeaderCallback);
 		_fnCallbackReg(oSettings, 'aoFooterCallback', oInit.fnFooterCallback);
 		_fnCallbackReg(oSettings, 'aoInitComplete', oInit.fnInitComplete);
@@ -8291,14 +8290,6 @@ DataTable.defaults = {
 	 * the page the display display will match what thy had previously set up.
 	 */
 	"bStateSave": false,
-
-
-	/**
-	 * This function is called when a TR element is created (and all TD child
-	 * elements have been inserted), or registered if using a DOM source, allowing
-	 * manipulation of the TR element (adding classes etc).
-	 */
-	"fnCreatedRow": null,
 
 
 	/**
