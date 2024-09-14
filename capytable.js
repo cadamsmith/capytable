@@ -160,7 +160,6 @@ var DataTable = function (selector, options) {
 			"bLengthChange",
 			"bFilter",
 			"bSort",
-			"bSortMulti",
 			"bInfo",
 			"bAutoWidth",
 			"bSortClasses",
@@ -1777,7 +1776,6 @@ var _fnCompatMap = function (o, knew, old) {
  */
 function _fnCompatOpts(init) {
 	_fnCompatMap(init, 'ordering', 'bSort');
-	_fnCompatMap(init, 'orderMulti', 'bSortMulti');
 	_fnCompatMap(init, 'orderClasses', 'bSortClasses');
 	_fnCompatMap(init, 'orderCellsTop', 'bSortCellsTop');
 	_fnCompatMap(init, 'order', 'aaSorting');
@@ -5305,40 +5303,7 @@ function _fnSortAdd(settings, colIdx, addIndex, shift) {
 	}
 
 	// If appending the sort then we are multi-column sorting
-	if ((shift || addIndex) && settings.oFeatures.bSortMulti) {
-		// Are we already doing some kind of sort on this column?
-		var sortIdx = _pluck(sorting, '0').indexOf(colIdx);
-
-		if (sortIdx !== -1) {
-			// Yes, modify the sort
-			nextSortIdx = next(sorting[sortIdx], true);
-
-			if (nextSortIdx === null && sorting.length === 1) {
-				nextSortIdx = 0; // can't remove sorting completely
-			}
-
-			if (nextSortIdx === null) {
-				sorting.splice(sortIdx, 1);
-			}
-			else {
-				sorting[sortIdx][1] = asSorting[nextSortIdx];
-				sorting[sortIdx]._idx = nextSortIdx;
-			}
-		}
-		else if (shift) {
-			// No sort on this column yet, being added by shift click
-			// add it as itself
-			sorting.push([colIdx, asSorting[0], 0]);
-			sorting[sorting.length - 1]._idx = 0;
-		}
-		else {
-			// No sort on this column yet, being added from a colspan
-			// so add with same direction as first column
-			sorting.push([colIdx, sorting[0][1], 0]);
-			sorting[sorting.length - 1]._idx = 0;
-		}
-	}
-	else if (sorting.length && sorting[0][0] == colIdx) {
+	if (sorting.length && sorting[0][0] == colIdx) {
 		// Single column - already sorting on this column, modify the sort
 		nextSortIdx = next(sorting[0]);
 
@@ -8325,13 +8290,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Enable or display DataTables' ability to sort multiple columns at the
-	 * same time (activated by shift-click by the user).
-	 */
-	"bSortMulti": true,
-
-
-	/**
 	 * Allows control over whether DataTables should use the top (true) unique
 	 * cell that is found for a single column, or the bottom (false - default).
 	 * This is useful when using complex headers.
@@ -9190,13 +9148,6 @@ DataTable.models.oSettings = {
 		 * set a default use {@link DataTable.defaults}.
 		 */
 		"bSort": null,
-
-		/**
-		 * Multi-column sorting
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 */
-		"bSortMulti": null,
 
 		/**
 		 * Apply a class to the columns which are being sorted to provide a
