@@ -168,7 +168,6 @@ var DataTable = function (selector, options) {
 		]);
 		_fnMap(oSettings, oInit, [
 			"fnFormatNumber",
-			"sServerMethod",
 			"aaSorting",
 			"aaSortingFixed",
 			"aLengthMenu",
@@ -4254,17 +4253,8 @@ function _fnInitialise(settings) {
 		_fnDrawHead(settings, settings.aoHeader);
 		_fnDrawHead(settings, settings.aoFooter);
 
-		// Local data load
-		// Check if there is data passing into the constructor
-		if (init.aaData) {
-			for (i = 0; i < init.aaData.length; i++) {
-				_fnAddData(settings, init.aaData[i]);
-			}
-		}
-		else {
-			// Grab the data from the page
-			_fnAddTr(settings, $(settings.nTBody).children('tr'));
-		}
+		// Grab the data from the page
+		_fnAddTr(settings, $(settings.nTBody).children('tr'));
 
 		// Filter not yet applied - copy the display master
 		settings.aiDisplay = settings.aiDisplayMaster.slice();
@@ -8330,15 +8320,6 @@ DataTable.models.oColumn = {
  */
 DataTable.defaults = {
 	/**
-	 * An array of data to use for the table, passed in at initialisation which
-	 * will be used in preference to any data which is already in the DOM. This is
-	 * particularly useful for constructing tables purely in Javascript, for
-	 * example with a custom Ajax call.
-	 */
-	"aaData": null,
-
-
-	/**
 	 * If ordering is enabled, then DataTables will perform a first pass sort on
 	 * initialisation. You can define which column(s) the sort is performed
 	 * upon, and the sorting direction, with this variable. The `sorting` array
@@ -8998,16 +8979,6 @@ DataTable.defaults = {
 	 * (in which case it will be treated as a pixel measurement).
 	 */
 	"sScrollY": "",
-
-
-	/**
-	 * __Deprecated__ The functionality provided by this parameter has now been
-	 * superseded by that provided through `ajax`, which should be used instead.
-	 *
-	 * Set the HTTP method that is used to make the Ajax call for server-side
-	 * processing or Ajax sourced data.
-	 */
-	"sServerMethod": "GET",
 
 
 	/**
@@ -9748,14 +9719,6 @@ DataTable.models.oSettings = {
 	 * Data submitted as part of the last Ajax request
 	 */
 	"oAjaxData": undefined,
-
-	/**
-	 * Send the XHR HTTP method - GET or POST (could be PUT or DELETE if
-	 * required).
-	 * Note that this parameter will be set by the initialisation routine. To
-	 * set a default use {@link DataTable.defaults}.
-	 */
-	"sServerMethod": null,
 
 	/**
 	 * Format numbers for display.
