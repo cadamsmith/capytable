@@ -3898,7 +3898,6 @@ function _fnFilter(searchRows, settings, input, options, column) {
  * Build a regular expression object suitable for searching a table
  *  @param {string} sSearch string to search for
  *  @param {bool} bRegex treat as a regular expression or not
- *  @param {bool} bSmart perform smart filtering or not
  *  @param {bool} bCaseInsensitive Do case insensitive matching or not
  *  @returns {RegExp} constructed object
  *  @memberof DataTable#oApi
@@ -3910,7 +3909,6 @@ function _fnFilterCreateSearch(search, inOpts) {
 		caseInsensitive: true,
 		exact: false,
 		regex: false,
-		smart: true
 	}, inOpts);
 
 	if (typeof search !== 'string') {
@@ -3931,61 +3929,59 @@ function _fnFilterCreateSearch(search, inOpts) {
 		search :
 		_fnEscapeRegex(search);
 
-	if (options.smart) {
-		/* For smart filtering we want to allow the search to work regardless of
-		 * word order. We also want double quoted text to be preserved, so word
-		 * order is important - a la google. And a negative look around for
-		 * finding rows which don't contain a given string.
-		 * 
-		 * So this is the sort of thing we want to generate:
-		 * 
-		 * ^(?=.*?\bone\b)(?=.*?\btwo three\b)(?=.*?\bfour\b).*$
-		 */
-		var parts = search.match(/!?["\u201C][^"\u201D]+["\u201D]|[^ ]+/g) || [''];
-		var a = parts.map(function (word) {
-			var negative = false;
-			var m;
+	/* For smart filtering we want to allow the search to work regardless of
+	 * word order. We also want double quoted text to be preserved, so word
+	 * order is important - a la google. And a negative look around for
+	 * finding rows which don't contain a given string.
+	 * 
+	 * So this is the sort of thing we want to generate:
+	 * 
+	 * ^(?=.*?\bone\b)(?=.*?\btwo three\b)(?=.*?\bfour\b).*$
+	 */
+	var parts = search.match(/!?["\u201C][^"\u201D]+["\u201D]|[^ ]+/g) || [''];
+	var a = parts.map(function (word) {
+		var negative = false;
+		var m;
 
-			// Determine if it is a "does not include"
-			if (word.charAt(0) === '!') {
-				negative = true;
-				word = word.substring(1);
+		// Determine if it is a "does not include"
+		if (word.charAt(0) === '!') {
+			negative = true;
+			word = word.substring(1);
+		}
+
+		// Strip the quotes from around matched phrases
+		if (word.charAt(0) === '"') {
+			m = word.match(/^"(.*)"$/);
+			word = m ? m[1] : word;
+		}
+		else if (word.charAt(0) === '\u201C') {
+			// Smart quote match (iPhone users)
+			m = word.match(/^\u201C(.*)\u201D$/);
+			word = m ? m[1] : word;
+		}
+
+		// For our "not" case, we need to modify the string that is
+		// allowed to match at the end of the expression.
+		if (negative) {
+			if (word.length > 1) {
+				not.push('(?!' + word + ')');
 			}
 
-			// Strip the quotes from around matched phrases
-			if (word.charAt(0) === '"') {
-				m = word.match(/^"(.*)"$/);
-				word = m ? m[1] : word;
-			}
-			else if (word.charAt(0) === '\u201C') {
-				// Smart quote match (iPhone users)
-				m = word.match(/^\u201C(.*)\u201D$/);
-				word = m ? m[1] : word;
-			}
+			word = '';
+		}
 
-			// For our "not" case, we need to modify the string that is
-			// allowed to match at the end of the expression.
-			if (negative) {
-				if (word.length > 1) {
-					not.push('(?!' + word + ')');
-				}
+		return word.replace(/"/g, '');
+	});
 
-				word = '';
-			}
+	var match = not.length
+		? not.join('')
+		: '';
 
-			return word.replace(/"/g, '');
-		});
+	var boundary = options.boundary
+		? '\\b'
+		: '';
 
-		var match = not.length
-			? not.join('')
-			: '';
-
-		var boundary = options.boundary
-			? '\\b'
-			: '';
-
-		search = '^(?=.*?' + boundary + a.join(')(?=.*?' + boundary) + ')(' + match + '.)*$';
-	}
+	search = '^(?=.*?' + boundary + a.join(')(?=.*?' + boundary) + ')(' + match + '.)*$';
 
 	return new RegExp(search, options.caseInsensitive ? 'i' : '');
 }
@@ -7635,11 +7631,6 @@ DataTable.models.oSearch = {
 	 * regex characters escaped.
 	 */
 	"regex": false,
-
-	/**
-	 * Flag to indicate if DataTables is to use its smart filtering or not.
-	 */
-	"smart": true,
 
 	/**
 	 * Flag to indicate if DataTables should only trigger a search when
