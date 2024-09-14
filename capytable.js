@@ -186,16 +186,6 @@ var DataTable = function (selector, options) {
 			["sScrollXInner", "sXInner"],
 			["sScrollY", "sY"],
 		]);
-		_fnMap(oSettings.oLanguage, oInit, "fnInfoCallback");
-
-		/* Callback functions which are array driven */
-		_fnCallbackReg(oSettings, 'aoStateSaveParams', oInit.fnStateSaveParams);
-		_fnCallbackReg(oSettings, 'aoStateLoadParams', oInit.fnStateLoadParams);
-		_fnCallbackReg(oSettings, 'aoStateLoaded', oInit.fnStateLoaded);
-		_fnCallbackReg(oSettings, 'aoRowCallback', oInit.fnRowCallback);
-		_fnCallbackReg(oSettings, 'aoHeaderCallback', oInit.fnHeaderCallback);
-		_fnCallbackReg(oSettings, 'aoInitComplete', oInit.fnInitComplete);
-		_fnCallbackReg(oSettings, 'aoPreDrawCallback', oInit.fnPreDrawCallback);
 
 		oSettings.rowIdFn = _fnGetObjectDataFn(oInit.rowId);
 
@@ -8128,49 +8118,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * This function is called on every 'draw' event, and allows you to
-	 * dynamically modify the header row. This can be used to calculate and
-	 * display useful information about the table.
-	 */
-	"fnHeaderCallback": null,
-
-
-	/**
-	 * The information element can be used to convey information about the current
-	 * state of the table. Although the internationalisation options presented by
-	 * DataTables are quite capable of dealing with most customisations, there may
-	 * be times where you wish to customise the string further. This callback
-	 * allows you to do exactly that.
-	 */
-	"fnInfoCallback": null,
-
-
-	/**
-	 * Called when the table has been initialised. Normally DataTables will
-	 * initialise sequentially and there will be no need for this function,
-	 * however, this does not hold true when using external language information
-	 * since that is obtained using an async XHR call.
-	 */
-	"fnInitComplete": null,
-
-
-	/**
-	 * Called at the very start of each table draw and can be used to cancel the
-	 * draw by returning false, any other return (including undefined) results in
-	 * the full draw occurring).
-	 */
-	"fnPreDrawCallback": null,
-
-
-	/**
-	 * This function allows you to 'post process' each row after it have been
-	 * generated for each table draw, but before it is rendered on screen. This
-	 * function might be used for setting the row class name etc.
-	 */
-	"fnRowCallback": null,
-
-
-	/**
 	 * Load the table state. With this function you can define from where, and how, the
 	 * state of a table is loaded. By default DataTables will load from `localStorage`
 	 * but you might wish to use a server-side database or cookies.
@@ -8189,23 +8136,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Callback which allows modification of the saved state prior to loading that state.
-	 * This callback is called when the table is loading state from the stored data, but
-	 * prior to the settings object being modified by the saved state. Note that for
-	 * plug-in authors, you should use the `stateLoadParams` event to load parameters for
-	 * a plug-in.
-	 */
-	"fnStateLoadParams": null,
-
-
-	/**
-	 * Callback that is called when the state has been loaded from the state saving method
-	 * and the DataTables settings object has been modified as a result of the loaded state.
-	 */
-	"fnStateLoaded": null,
-
-
-	/**
 	 * Save the table state. This function allows you to define where and how the state
 	 * information for the table is stored By default DataTables will use `localStorage`
 	 * but you might wish to use a server-side database or cookies.
@@ -8220,16 +8150,6 @@ DataTable.defaults = {
 			// noop
 		}
 	},
-
-
-	/**
-	 * Callback which allows modification of the state to be saved. Called when the table
-	 * has changed state a new state save is required. This method allows modification of
-	 * the state saving object prior to actually doing the save, including addition or
-	 * other state properties or modification. Note that for plug-in authors, you should
-	 * use the `stateSaveParams` event to save parameters for a plug-in.
-	 */
-	"fnStateSaveParams": null,
 
 
 	/**
@@ -8965,11 +8885,6 @@ DataTable.models.oSettings = {
 	 * Language information for the table.
 	 */
 	"oLanguage": {
-		/**
-		 * Information callback function. See
-		 * {@link DataTable.defaults.fnInfoCallback}
-		 */
-		"fnInfoCallback": null
 	},
 
 	/**
@@ -10465,7 +10380,7 @@ DataTable.feature.register('info', function (settings, opts) {
 		});
 
 	opts = $.extend({
-		callback: lang.fnInfoCallback,
+		callback: null,
 		empty: lang.sInfoEmpty,
 		postfix: lang.sInfoPostFix,
 		search: lang.sInfoFiltered,
