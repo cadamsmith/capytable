@@ -8262,17 +8262,6 @@ DataTable.defaults = {
 
 
 		/**
-		 * Assign a `placeholder` attribute to the search `input` element
-		 *  @type string
-		 *  @default 
-		 *
-		 *  @dtopt Language
-		 *  @name DataTable.defaults.language.searchPlaceholder
-		 */
-		"sSearchPlaceholder": "",
-
-
-		/**
 		 * All of the language information can be stored in a file on the
 		 * server-side, which DataTables will look up if this parameter is passed.
 		 * It must store the URL of the language file, which is in a JSON format,
@@ -10322,7 +10311,6 @@ DataTable.feature.register('search', function (settings, opts) {
 	var input = '<input type="search" class="' + classes.input + '"/>';
 
 	opts = $.extend({
-		placeholder: language.sSearchPlaceholder,
 		processing: false,
 		text: language.sSearch
 	}, opts);
@@ -10381,7 +10369,7 @@ DataTable.feature.register('search', function (settings, opts) {
 
 	var jqFilter = $('input', filter)
 		.val(previousSearch.search)
-		.attr('placeholder', opts.placeholder)
+		.attr('placeholder', "")
 		.on('keyup.DT search.DT input.DT paste.DT cut.DT', searchFn)
 		.on('mouseup.DT', function (e) {
 			// Edge fix! Edge 17 does not trigger anything other than mouse events when clicking
