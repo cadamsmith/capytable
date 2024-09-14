@@ -156,7 +156,6 @@ var DataTable = function (selector, options) {
 			"bSort",
 			"bInfo",
 			"bAutoWidth",
-			"bServerSide",
 		]);
 		_fnMap(oSettings, oInit, [
 			"fnFormatNumber",
@@ -1775,11 +1774,6 @@ function _fnCompatOpts(init) {
 				_fnCamelToHungarian(DataTable.models.oSearch, searchCols[i]);
 			}
 		}
-	}
-
-	// Enable search delay if server-side processing is enabled
-	if (init.serverSide && !init.searchDelay) {
-		init.searchDelay = 400;
 	}
 }
 
