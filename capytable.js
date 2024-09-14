@@ -268,9 +268,6 @@ var DataTable = function (selector, options) {
 			});
 		}
 
-		// Must be done after everything which can be overridden by the state saving!
-		_fnCallbackReg(oSettings, 'aoDrawCallback', _fnSaveState);
-
 		// If aaSorting is not defined, then we use the first indicator in asSorting
 		// in case that has been altered, so the default sort reflects that option
 		if (oInit.aaSorting === undefined) {
@@ -4096,38 +4093,35 @@ function _fnInitialise(settings) {
 	_fnBuildHead(settings, 'header');
 	_fnBuildHead(settings, 'footer');
 
-	// Load the table's state (if needed) and then render around it and draw
-	_fnLoadState(settings, init, function () {
-		// Then draw the header / footer
-		_fnDrawHead(settings, settings.aoHeader);
-		_fnDrawHead(settings, settings.aoFooter);
+	// Then draw the header / footer
+	_fnDrawHead(settings, settings.aoHeader);
+	_fnDrawHead(settings, settings.aoFooter);
 
-		// Grab the data from the page
-		_fnAddTr(settings, $(settings.nTBody).children('tr'));
+	// Grab the data from the page
+	_fnAddTr(settings, $(settings.nTBody).children('tr'));
 
-		// Filter not yet applied - copy the display master
-		settings.aiDisplay = settings.aiDisplayMaster.slice();
+	// Filter not yet applied - copy the display master
+	settings.aiDisplay = settings.aiDisplayMaster.slice();
 
-		// Enable features
-		_fnAddOptionsHtml(settings);
-		_fnSortInit(settings);
+	// Enable features
+	_fnAddOptionsHtml(settings);
+	_fnSortInit(settings);
 
-		_colGroup(settings);
+	_colGroup(settings);
 
-		/* Okay to show that something is going on now */
-		_fnProcessingDisplay(settings, true);
+	/* Okay to show that something is going on now */
+	_fnProcessingDisplay(settings, true);
 
-		_fnCallbackFire(settings, null, 'preInit', [settings], true);
+	_fnCallbackFire(settings, null, 'preInit', [settings], true);
 
-		// If there is default sorting required - let's do it. The sort function
-		// will do the drawing for us. Otherwise we draw the table regardless of the
-		// Ajax source - this allows the table to look initialised for Ajax sourcing
-		// data (show 'loading' message possibly)
-		_fnReDraw(settings);
+	// If there is default sorting required - let's do it. The sort function
+	// will do the drawing for us. Otherwise we draw the table regardless of the
+	// Ajax source - this allows the table to look initialised for Ajax sourcing
+	// data (show 'loading' message possibly)
+	_fnReDraw(settings);
 
-		_fnInitComplete(settings);
-		_fnProcessingDisplay(settings, false);
-	});
+	_fnInitComplete(settings);
+	_fnProcessingDisplay(settings, false);
 }
 
 
@@ -5355,50 +5349,6 @@ function _fnSortData(settings, colIdx) {
 
 // #endregion
 // #region core.state.js
-
-/**
- * State information for a table
- *
- * @param {*} settings
- * @returns State object
- */
-function _fnSaveState(settings) {
-	if (settings._bLoadingState) {
-		return;
-	}
-
-	/* Store the interesting variables */
-	var state = {
-		time: +new Date(),
-		start: settings._iDisplayStart,
-		length: settings._iDisplayLength,
-		order: $.extend(true, [], settings.aaSorting),
-		search: $.extend({}, settings.oPreviousSearch),
-		columns: settings.aoColumns.map(function (col, i) {
-			return {
-				visible: col.bVisible,
-				search: $.extend({}, settings.aoPreSearchCols[i])
-			};
-		})
-	};
-
-	settings.oSavedState = state;
-	_fnCallbackFire(settings, "aoStateSaveParams", 'stateSaveParams', [settings, state]);
-}
-
-
-/**
- * Attempt to load a saved table state
- *  @param {object} oSettings dataTables settings object
- *  @param {object} oInit DataTables init object so we can override settings
- *  @param {function} callback Callback to execute when the state has been loaded
- *  @memberof DataTable#oApi
- */
-function _fnLoadState(settings, init, callback) {
-	callback();
-	return;
-}
-
 // #endregion
 // #region core.support.js
 
@@ -6963,8 +6913,6 @@ _api_registerPlural('columns().visible()', 'column().visible()', function (vis, 
 			if (!settings.aiDisplay.length) {
 				$(settings.nTBody).find('td[colspan]').attr('colspan', _fnVisbleColumns(settings));
 			}
-
-			_fnSaveState(settings);
 
 			// Second loop once the first is done for events
 			that.iterator('column', function (settings, column) {
