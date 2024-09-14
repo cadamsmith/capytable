@@ -164,7 +164,6 @@ var DataTable = function (selector, options) {
 			"aLengthMenu",
 			"sPaginationType",
 			"iStateDuration",
-			"iTabIndex",
 			"sDom",
 			"fnStateLoadCallback",
 			"fnStateSaveCallback",
@@ -8171,17 +8170,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * By default DataTables allows keyboard navigation of the table (sorting, paging,
-	 * and filtering) by adding a `tabindex` attribute to the required elements. This
-	 * allows you to tab through the controls and press the enter key to activate them.
-	 * The tabindex is default 0, meaning that the tab follows the flow of the document.
-	 * You can overrule this using this parameter if you wish. Use a value of -1 to
-	 * disable built-in keyboard navigation.
-	 */
-	"iTabIndex": 0,
-
-
-	/**
 	 * Classes that DataTables assigns to the various components and features
 	 * that it adds to the HTML table. This allows classes to be configured
 	 * during initialisation in addition to through the static
@@ -9294,12 +9282,6 @@ DataTable.models.oSettings = {
 	 * incrementing internal counter is used.
 	 */
 	"sInstance": null,
-
-	/**
-	 * tabindex attribute value that is added to DataTables control elements, allowing
-	 * keyboard navigation of the table and its controls.
-	 */
-	"iTabIndex": 0,
 
 	/**
 	 * DIV container for the footer scrolling table if scrolling
@@ -10653,9 +10635,7 @@ function _pagingDraw(settings, host, opts) {
 			'data-dt-idx': button,
 			'tabIndex': btnInfo.disabled
 				? -1
-				: settings.iTabIndex
-					? settings.iTabIndex
-					: null, // `0` doesn't need a tabIndex since it is the default
+				: null,
 		});
 
 		if (typeof button !== 'number') {
