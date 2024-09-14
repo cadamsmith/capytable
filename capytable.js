@@ -196,7 +196,6 @@ var DataTable = function (selector, options) {
 		_fnMap(oSettings.oLanguage, oInit, "fnInfoCallback");
 
 		/* Callback functions which are array driven */
-		_fnCallbackReg(oSettings, 'aoDrawCallback', oInit.fnDrawCallback);
 		_fnCallbackReg(oSettings, 'aoStateSaveParams', oInit.fnStateSaveParams);
 		_fnCallbackReg(oSettings, 'aoStateLoadParams', oInit.fnStateLoadParams);
 		_fnCallbackReg(oSettings, 'aoStateLoaded', oInit.fnStateLoaded);
@@ -8290,13 +8289,6 @@ DataTable.defaults = {
 	 * the page the display display will match what thy had previously set up.
 	 */
 	"bStateSave": false,
-
-
-	/**
-	 * This function is called on every 'draw' event, and allows you to
-	 * dynamically modify any aspect you want about the created DOM.
-	 */
-	"fnDrawCallback": null,
 
 
 	/**
