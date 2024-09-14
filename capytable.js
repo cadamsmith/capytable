@@ -194,7 +194,6 @@ var DataTable = function (selector, options) {
 			["sScrollX", "sX"],
 			["sScrollXInner", "sXInner"],
 			["sScrollY", "sY"],
-			["bScrollCollapse", "bCollapse"]
 		]);
 		_fnMap(oSettings.oLanguage, oInit, "fnInfoCallback");
 
@@ -4453,9 +4452,7 @@ function _fnFeatureHtmlTable(settings) {
 	});
 
 	$(scrollBody).css('max-height', scrollY);
-	if (!scroll.bCollapse) {
-		$(scrollBody).css('height', scrollY);
-	}
+	$(scrollBody).css('height', scrollY);
 
 	settings.nScrollHead = scrollHead;
 	settings.nScrollBody = scrollBody;
@@ -8321,17 +8318,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * When vertical (y) scrolling is enabled, DataTables will force the height of
-	 * the table's viewport to the given height at all times (useful for layout).
-	 * However, this can look odd when filtering data down to a small data set,
-	 * and the footer is left "floating" further down. This parameter (when
-	 * enabled) will cause DataTables to collapse the table's viewport down when
-	 * the result set will fit within the given Y height.
-	 */
-	"bScrollCollapse": false,
-
-
-	/**
 	 * Enable or disable sorting of columns. Sorting of individual columns can be
 	 * disabled by the `sortable` option for each column.
 	 */
@@ -9234,14 +9220,6 @@ DataTable.models.oSettings = {
 	 * Scrolling settings for a table.
 	 */
 	"oScroll": {
-		/**
-		 * When the table is shorter in height than sScrollY, collapse the
-		 * table container down to the height of the table (when true).
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 */
-		"bCollapse": null,
-
 		/**
 		 * Width of the scrollbar for the web-browser's platform. Calculated
 		 * during table initialisation.
