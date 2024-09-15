@@ -148,7 +148,6 @@ var DataTable = function (selector, options) {
 			"bInfo",
 		]);
 		_fnMap(oSettings, oInit, [
-			"fnFormatNumber",
 			"aaSorting",
 			"aLengthMenu",
 			"rowId",
@@ -1208,6 +1207,20 @@ function _addClass(el, name) {
 			}
 		});
 	}
+}
+
+/**
+* When rendering large numbers in the information element for the table
+* (i.e. "Showing 1 to 10 of 57 entries") DataTables will render large numbers
+* to have a comma separator for the 'thousands' units (e.g. 1 million is
+* rendered as "1,000,000") to help readability for the end user. This
+* function will override the default method DataTables uses.
+*/
+function _formatNumber(toFormat) {
+   return toFormat.toString().replace(
+	   /\B(?=(\d{3})+(?!\d))/g,
+	   ","
+   );
 }
 
 // #endregion
@@ -4764,7 +4777,7 @@ function _fnMacros(settings, str, entries) {
 	// When infinite scrolling, we are always starting at 1. _iDisplayStart is
 	// used only internally
 	var
-		formatter = settings.fnFormatNumber,
+		formatter = _formatNumber,
 		start = settings._iDisplayStart + 1,
 		len = settings._iDisplayLength,
 		vis = settings.fnRecordsDisplay(),
@@ -6851,21 +6864,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * When rendering large numbers in the information element for the table
-	 * (i.e. "Showing 1 to 10 of 57 entries") DataTables will render large numbers
-	 * to have a comma separator for the 'thousands' units (e.g. 1 million is
-	 * rendered as "1,000,000") to help readability for the end user. This
-	 * function will override the default method DataTables uses.
-	 */
-	"fnFormatNumber": function (toFormat) {
-		return toFormat.toString().replace(
-			/\B(?=(\d{3})+(?!\d))/g,
-			this.oLanguage.sThousands
-		);
-	},
-
-
-	/**
 	 * Classes that DataTables assigns to the various components and features
 	 * that it adds to the HTML table. This allows classes to be configured
 	 * during initialisation in addition to through the static
@@ -6984,15 +6982,6 @@ DataTable.defaults = {
 		 * is. The variable _MAX_ is dynamically updated.
 		 */
 		"sInfoFiltered": "(filtered from _MAX_ total _ENTRIES-MAX_)",
-
-
-		/**
-		 * DataTables has a build in number formatter (`formatNumber`) which is
-		 * used to format large numbers that are used in the table information.
-		 * By default a comma is used, but this can be trivially changed to any
-		 * character you wish with this parameter.
-		 */
-		"sThousands": ",",
 
 
 		/**
@@ -7609,13 +7598,6 @@ DataTable.models.oSettings = {
 	 * Data submitted as part of the last Ajax request
 	 */
 	"oAjaxData": undefined,
-
-	/**
-	 * Format numbers for display.
-	 * Note that this parameter will be set by the initialisation routine. To
-	 * set a default use {@link DataTable.defaults}.
-	 */
-	"fnFormatNumber": null,
 
 	/**
 	 * List of options that can be used for the user selectable length menu.
@@ -9162,7 +9144,7 @@ function _pagingButtonInfo(settings, button, page, pages) {
 
 		default:
 			if (typeof button === 'number') {
-				o.display = settings.fnFormatNumber(button + 1);
+				o.display = _formatNumber(button + 1);
 
 				if (page === button) {
 					o.active = true;
@@ -9341,7 +9323,7 @@ DataTable.feature.register('pageLength', function (settings, opts) {
 	for (i = 0; i < lengths.length; i++) {
 		select[0][i] = new Option(
 			typeof language[i] === 'number' ?
-				settings.fnFormatNumber(language[i]) :
+				_formatNumber(language[i]) :
 				language[i],
 			lengths[i]
 		);
