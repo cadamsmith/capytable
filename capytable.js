@@ -919,7 +919,6 @@ var _Api; // DataTable.Api
 var _api_register; // DataTable.Api.register
 var _api_registerPlural; // DataTable.Api.registerPlural
 
-var _re_dic = {};
 var _re_new_lines = /[\r\n\u2028]/g;
 var _re_html = /<([^>]*>)/g;
 var _max_str_len = Math.pow(2, 28);
