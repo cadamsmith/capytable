@@ -1700,7 +1700,6 @@ function _fnAddColumn(oSettings) {
 		"aDataSort": oDefaults.aDataSort ? oDefaults.aDataSort : [iCol],
 		"mData": oDefaults.mData ? oDefaults.mData : iCol,
 		idx: iCol,
-		searchFixed: {},
 		colEl: $('<col>').attr('data-dt-column', iCol)
 	});
 	oSettings.aoColumns.push(oCol);
@@ -3447,10 +3446,6 @@ function _fnFilterComplete(settings, input) {
 
 	// Global filter first
 	_fnFilter(settings.aiDisplay, settings, input.search, input);
-
-	$.each(settings.searchFixed, function (name, term) {
-		_fnFilter(settings.aiDisplay, settings, term, {});
-	});
 
 	// Tell the draw function we have been filtering
 	settings.bFiltered = true;
@@ -6791,11 +6786,6 @@ DataTable.models.oColumn = {
 
 	/** Cached string which is the longest in the column */
 	maxLenString: null,
-
-	/**
-	 * Store for named searches
-	 */
-	searchFixed: null
 };
 
 // #endregion
@@ -7500,11 +7490,6 @@ DataTable.models.oSettings = {
 	 * set a default use {@link DataTable.defaults}.
 	 */
 	"oPreviousSearch": {},
-
-	/**
-	 * Store for named searches
-	 */
-	searchFixed: {},
 
 	/**
 	 * Sorting that is applied to the table. Note that the inner arrays are
