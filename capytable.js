@@ -956,18 +956,6 @@ var _intVal = function (s) {
 	return !isNaN(integer) && isFinite(s) ? integer : null;
 };
 
-// Convert from a formatted number with characters other than `.` as the
-// decimal place, to a Javascript number
-var _numToDecimal = function (num, decimalPoint) {
-	// Cache created regular expressions for speed as this function is called often
-	if (!_re_dic[decimalPoint]) {
-		_re_dic[decimalPoint] = new RegExp(_fnEscapeRegex(decimalPoint), 'g');
-	}
-	return typeof num === 'string' && decimalPoint !== '.' ?
-		num.replace(/\./g, '').replace(_re_dic[decimalPoint], '.') :
-		num;
-};
-
 
 var _isNumber = function (d, formatted, allowEmpty) {
 	var type = typeof d;
@@ -1707,7 +1695,6 @@ function _fnCompatCols(init) {
 	_fnCompatMap(init, 'orderable', 'bSortable');
 	_fnCompatMap(init, 'orderData', 'aDataSort');
 	_fnCompatMap(init, 'orderSequence', 'asSorting');
-	_fnCompatMap(init, 'orderDataType', 'sortDataType');
 
 	// orderData can be given as an integer
 	var dataSort = init.aDataSort;
@@ -3804,9 +3791,6 @@ function _fnFilterData(settings) {
  *  @memberof DataTable#oApi
  */
 function _fnInitialise(settings) {
-	var i;
-	var init = settings.oInit;
-
 	// Ensure that the table data is fully initialised
 	if (!settings.bInitialised) {
 		setTimeout(function () { _fnInitialise(settings); }, 200);
@@ -4005,176 +3989,6 @@ function _fnProcessingRun(settings, enable, run) {
 function _fnFeatureHtmlTable(settings) {
 	return settings.nTable;
 }
-
-/**
- * Update the header, footer and body tables for resizing - i.e. column
- * alignment.
- *
- * Welcome to the most horrible function DataTables. The process that this
- * function follows is basically:
- *   1. Re-create the table inside the scrolling div
- *   2. Correct colgroup > col values if needed
- *   3. Copy colgroup > col over to header and footer
- *   4. Clean up
- *
- *  @param {object} settings dataTables settings object
- *  @memberof DataTable#oApi
- */
-function _fnScrollDraw(settings) {
-	// Given that this is such a monster function, a lot of variables are use
-	// to try and keep the minimised size as small as possible
-	var
-		scroll = settings.oScroll,
-		barWidth = scroll.iBarWidth,
-		divHeader = $(settings.nScrollHead),
-		divHeaderInner = divHeader.children('div'),
-		divHeaderTable = divHeaderInner.children('table'),
-		divBodyEl = settings.nScrollBody,
-		divBody = $(divBodyEl),
-		divFooter = $(settings.nScrollFoot),
-		divFooterInner = divFooter.children('div'),
-		divFooterTable = divFooterInner.children('table'),
-		header = $(settings.nTHead),
-		table = $(settings.nTable),
-		footer = settings.nTFoot && $('th, td', settings.nTFoot).length ? $(settings.nTFoot) : null,
-		browser = settings.oBrowser,
-		headerCopy, footerCopy;
-
-	// If the scrollbar visibility has changed from the last draw, we need to
-	// adjust the column sizes as the table width will have changed to account
-	// for the scrollbar
-	var scrollBarVis = divBodyEl.scrollHeight > divBodyEl.clientHeight;
-
-	if (settings.scrollBarVis !== scrollBarVis && settings.scrollBarVis !== undefined) {
-		settings.scrollBarVis = scrollBarVis;
-		_fnAdjustColumnSizing(settings);
-		return; // adjust column sizing will call this function again
-	}
-	else {
-		settings.scrollBarVis = scrollBarVis;
-	}
-
-	// 1. Re-create the table inside the scrolling div
-	// Remove the old minimised thead and tfoot elements in the inner table
-	table.children('thead, tfoot').remove();
-
-	// Clone the current header and footer elements and then place it into the inner table
-	headerCopy = header.clone().prependTo(table);
-	headerCopy.find('th, td').removeAttr('tabindex');
-	headerCopy.find('[id]').removeAttr('id');
-
-	if (footer) {
-		footerCopy = footer.clone().prependTo(table);
-		footerCopy.find('[id]').removeAttr('id');
-	}
-
-	// 2. Correct colgroup > col values if needed
-	// It is possible that the cell sizes are smaller than the content, so we need to
-	// correct colgroup>col for such cases. This can happen if the auto width detection
-	// uses a cell which has a longer string, but isn't the widest! For example 
-	// "Chief Executive Officer (CEO)" is the longest string in the demo, but
-	// "Systems Administrator" is actually the widest string since it doesn't collapse.
-	// Note the use of translating into a column index to get the `col` element. This
-	// is because of Responsive which might remove `col` elements, knocking the alignment
-	// of the indexes out.
-	if (settings.aiDisplay.length) {
-		// Get the column sizes from the first row in the table. This should really be a
-		// [].find, but it wasn't supported in Chrome until Sept 2015, and DT has 10 year
-		// browser support
-		var firstTr = null;
-
-		for (i = 0; i < settings.aiDisplay.length; i++) {
-			var idx = settings.aiDisplay[i];
-			var tr = settings.aoData[idx].nTr;
-
-			if (tr) {
-				firstTr = tr;
-				break;
-			}
-		}
-
-		if (firstTr) {
-			var colSizes = $(firstTr).children('th, td').map(function (vis) {
-				return {
-					idx: _fnVisibleToColumnIndex(settings, vis),
-					width: $(this).outerWidth()
-				}
-			});
-
-			// Check against what the colgroup > col is set to and correct if needed
-			for (var i = 0; i < colSizes.length; i++) {
-				var colEl = settings.aoColumns[colSizes[i].idx].colEl[0];
-				var colWidth = colEl.style.width.replace('px', '');
-
-				if (colWidth !== colSizes[i].width) {
-					colEl.style.width = colSizes[i].width + 'px';
-				}
-			}
-		}
-	}
-
-	// 3. Copy the colgroup over to the header and footer
-	divHeaderTable
-		.find('colgroup')
-		.remove();
-
-	divHeaderTable.append(settings.colgroup.clone());
-
-	if (footer) {
-		divFooterTable
-			.find('colgroup')
-			.remove();
-
-		divFooterTable.append(settings.colgroup.clone());
-	}
-
-	// "Hide" the header and footer that we used for the sizing. We need to keep
-	// the content of the cell so that the width applied to the header and body
-	// both match, but we want to hide it completely.
-	$('th, td', headerCopy).each(function () {
-		$(this.childNodes).wrapAll('<div class="dt-scroll-sizing">');
-	});
-
-	if (footer) {
-		$('th, td', footerCopy).each(function () {
-			$(this.childNodes).wrapAll('<div class="dt-scroll-sizing">');
-		});
-	}
-
-	// 4. Clean up
-	// Figure out if there are scrollbar present - if so then we need a the header and footer to
-	// provide a bit more space to allow "overflow" scrolling (i.e. past the scrollbar)
-	var isScrolling = Math.floor(table.height()) > divBodyEl.clientHeight || divBody.css('overflow-y') == "scroll";
-	var paddingSide = 'padding' + (browser.bScrollbarLeft ? 'Left' : 'Right');
-
-	// Set the width's of the header and footer tables
-	var outerWidth = table.outerWidth();
-
-	divHeaderTable.css('width', _fnStringToCss(outerWidth));
-	divHeaderInner
-		.css('width', _fnStringToCss(outerWidth))
-		.css(paddingSide, isScrolling ? barWidth + "px" : "0px");
-
-	if (footer) {
-		divFooterTable.css('width', _fnStringToCss(outerWidth));
-		divFooterInner
-			.css('width', _fnStringToCss(outerWidth))
-			.css(paddingSide, isScrolling ? barWidth + "px" : "0px");
-	}
-
-	// Correct DOM ordering for colgroup - comes before the thead
-	table.children('colgroup').prependTo(table);
-
-	// Adjust the position of the header in case we loose the y-scrollbar
-	divBody.trigger('scroll');
-
-	// If sorting or filtering has occurred, jump the scrolling back to the top
-	// only if we aren't holding the position
-	if ((settings.bSorted || settings.bFiltered) && !settings._drawHold) {
-		divBodyEl.scrollTop = 0;
-	}
-}
-
 // #endregion
 // #region core.sizing.js
 
@@ -4423,8 +4237,6 @@ function _colGroup(settings) {
 		}
 	}
 }
-
-
 // #endregion
 // #region core.sort.js
 
@@ -4844,14 +4656,6 @@ function _fnSortingClasses(settings) {
 function _fnSortData(settings, colIdx) {
 	// Custom sorting function - provided by the sort data type
 	var column = settings.aoColumns[colIdx];
-	var customSort = DataTable.ext.order[column.sSortDataType];
-	var customData;
-
-	if (customSort) {
-		customData = customSort.call(settings.oInstance, settings, colIdx,
-			_fnColumnIndexToVisible(settings, colIdx)
-		);
-	}
 
 	// Use / populate cache
 	var row, cellData;
@@ -4870,10 +4674,8 @@ function _fnSortData(settings, colIdx) {
 			row._aSortData = [];
 		}
 
-		if (!row._aSortData[colIdx] || customSort) {
-			cellData = customSort ?
-				customData[rowIdx] : // If there was a custom sort function, use data from there
-				_fnGetCellData(settings, rowIdx, colIdx, 'sort');
+		if (!row._aSortData[colIdx]) {
+			cellData = _fnGetCellData(settings, rowIdx, colIdx, 'sort');
 
 			row._aSortData[colIdx] = formatter ?
 				formatter(cellData, settings) :
@@ -7359,12 +7161,6 @@ DataTable.models.oColumn = {
 	"sName": null,
 
 	/**
-	 * Custom sorting data type - defines which of the available plug-ins in
-	 * afnSortData the custom sorting will use - if any is defined.
-	 */
-	"sSortDataType": 'std',
-
-	/**
 	 * Class to be applied to the header element when sorting on this column
 	 */
 	"sSortingClass": null,
@@ -7925,15 +7721,6 @@ DataTable.defaults.column = {
 	 * client-side, your server-side code does not also need updating).
 	 */
 	"sName": "",
-
-
-	/**
-	 * Defines a data source type for the ordering which can be used to read
-	 * real-time information from the table (updating the internally cached
-	 * version) prior to ordering. This allows ordering to occur on user
-	 * editable elements such as form inputs.
-	 */
-	"sSortDataType": "std",
 
 
 	/**
