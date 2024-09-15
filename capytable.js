@@ -168,7 +168,6 @@ var DataTable = function (selector, options) {
 			"rowId",
 			"caption",
 			"layout",
-			"orderDescReverse",
 			"typeDetect",
 			["oSearch", "oPreviousSearch"],
 			["aoSearchCols", "aoPreSearchCols"],
@@ -5115,7 +5114,7 @@ function _fnSort(oSettings, col, dir) {
 
 		// If the first sort is desc, then reverse the array to preserve original
 		// order, just in reverse
-		if (aSort.length && aSort[0].dir === 'desc' && oSettings.orderDescReverse) {
+		if (aSort.length && aSort[0].dir === 'desc') {
 			aiOrig.reverse();
 		}
 
@@ -8227,11 +8226,6 @@ DataTable.defaults = {
 		 */
 		"sZeroRecords": "No matching records found"
 	},
-
-
-	/** The initial data order is reversed when `desc` ordering */
-	orderDescReverse: true,
-
 
 	/**
 	 * This parameter allows you to have define the global filtering state at
