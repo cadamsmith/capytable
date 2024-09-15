@@ -8021,14 +8021,6 @@ DataTable.defaults = {
 		 */
 		"sLoadingRecords": "Loading...",
 
-
-		/**
-		 * Text which is displayed when the table is processing a user action
-		 * (usually a sort command or similar).
-		 */
-		"sProcessing": "",
-
-
 		/**
 		 * Details the actions that will be taken when the user types into the
 		 * filtering input text box. The variable "_INPUT_", if used in the string,
