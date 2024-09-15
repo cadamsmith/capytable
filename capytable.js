@@ -162,10 +162,8 @@ var DataTable = function (selector, options) {
 			"aaSorting",
 			"aaSortingFixed",
 			"aLengthMenu",
-			"sPaginationType",
 			"renderer",
 			"rowId",
-			"caption",
 			"layout",
 			"typeDetect",
 			["oSearch", "oPreviousSearch"],
@@ -281,14 +279,6 @@ var DataTable = function (selector, options) {
 			* Cache the header, body and footer as required, creating them if needed
 			*/
 		var caption = $this.children('caption');
-
-		if (oSettings.caption) {
-			if (caption.length === 0) {
-				caption = $('<caption/>').appendTo($this);
-			}
-
-			caption.html(oSettings.caption);
-		}
 
 		// Store the caption side, so we can remove the element from the document
 		// when creating the element
@@ -1737,7 +1727,6 @@ function _fnCompatOpts(init) {
 	_fnCompatMap(init, 'order', 'aaSorting');
 	_fnCompatMap(init, 'orderFixed', 'aaSortingFixed');
 	_fnCompatMap(init, 'paging', 'bPaginate');
-	_fnCompatMap(init, 'pagingType', 'sPaginationType');
 	_fnCompatMap(init, 'pageLength', 'iDisplayLength');
 	_fnCompatMap(init, 'searching', 'bFilter');
 
@@ -8166,20 +8155,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * DataTables features six different built-in options for the buttons to
-	 * display for pagination control:
-	 *
-	 * * `numbers` - Page number buttons only
-	 * * `simple` - 'Previous' and 'Next' buttons only
-	 * * 'simple_numbers` - 'Previous' and 'Next' buttons, plus page numbers
-	 * * `full` - 'First', 'Previous', 'Next' and 'Last' buttons
-	 * * `full_numbers` - 'First', 'Previous', 'Next' and 'Last' buttons, plus page numbers
-	 * * `first_last_numbers` - 'First' and 'Last' buttons, plus page numbers
-	 */
-	"sPaginationType": "",
-
-
-	/**
 	 * Enable horizontal scrolling. When a table is too wide to fit into a
 	 * certain layout, or you have a large number of columns in the table, you
 	 * can enable x-scrolling to show the table in a viewport, which can be
@@ -8231,12 +8206,6 @@ DataTable.defaults = {
 	 * to set as the `id` property in the node.
 	 */
 	"rowId": "DT_RowId",
-
-
-	/**
-	 * Caption value
-	 */
-	"caption": null,
 };
 
 _fnHungarianMap(DataTable.defaults);
@@ -8798,13 +8767,6 @@ DataTable.models.oSettings = {
 	"aoOpenRows": [],
 
 	/**
-	 * Which type of pagination should be used.
-	 * Note that this parameter will be set by the initialisation routine. To
-	 * set a default use {@link DataTable.defaults}.
-	 */
-	"sPaginationType": "two_button",
-
-	/**
 	 * Number of paging controls on the page. Only used for backwards compatibility
 	 */
 	pagingControls: 0,
@@ -9025,8 +8987,6 @@ DataTable.models.oSettings = {
 	 * Data location where to store a row's id
 	 */
 	"rowId": null,
-
-	caption: '',
 
 	captionNode: null,
 
@@ -10244,7 +10204,6 @@ DataTable.feature.register('paging', function (settings, opts) {
 
 	opts = $.extend({
 		buttons: DataTable.ext.pager.numbers_length,
-		type: settings.sPaginationType,
 		boundaryNumbers: true,
 		firstLast: true,
 		previousNext: true,
@@ -10252,7 +10211,7 @@ DataTable.feature.register('paging', function (settings, opts) {
 	}, opts);
 
 	var host = $('<div/>')
-		.addClass(settings.oClasses.paging.container + (opts.type ? ' paging_' + opts.type : ''))
+		.addClass(settings.oClasses.paging.container)
 		.append(
 			$('<nav>')
 				.attr('aria-label', 'pagination')
