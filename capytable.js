@@ -1246,43 +1246,6 @@ function _addClass(el, name) {
  */
 DataTable.util = {
 	/**
-	 * Return a string with diacritic characters decomposed
-	 * @param {*} mixed Function or string to normalize
-	 * @param {*} both Return original string and the normalized string
-	 * @returns String or undefined
-	 */
-	diacritics: function (mixed, both) {
-		var type = typeof mixed;
-
-		if (type !== 'function') {
-			return _normalize(mixed, both);
-		}
-		_normalize = mixed;
-	},
-
-	/**
-	 * Debounce a function
-	 *
-	 * @param {function} fn Function to be called
-	 * @param {integer} freq Call frequency in mS
-	 * @return {function} Wrapped function
-	 */
-	debounce: function (fn, timeout) {
-		var timer;
-
-		return function () {
-			var that = this;
-			var args = arguments;
-
-			clearTimeout(timer);
-
-			timer = setTimeout(function () {
-				fn.apply(that, args);
-			}, timeout || 250);
-		};
-	},
-
-	/**
 	 * Throttle the calls to a function. Arguments and context are maintained
 	 * for the throttled function.
 	 *
@@ -1551,35 +1514,7 @@ DataTable.util = {
 				return data[source];
 			};
 		}
-	},
-
-	stripHtml: function (mixed) {
-		var type = typeof mixed;
-
-		if (type === 'function') {
-			_stripHtml = mixed;
-			return;
-		}
-		else if (type === 'string') {
-			return _stripHtml(mixed);
-		}
-		return mixed;
-	},
-
-	escapeHtml: function (mixed) {
-		var type = typeof mixed;
-
-		if (type === 'function') {
-			_escapeHtml = mixed;
-			return;
-		}
-		else if (type === 'string' || Array.isArray(mixed)) {
-			return _escapeHtml(mixed);
-		}
-		return mixed;
-	},
-
-	unique: _unique
+	}
 };
 
 // #endregion
