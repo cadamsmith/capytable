@@ -3333,7 +3333,7 @@ function _fnAddOptionsHtml(settings) {
 	renderer(settings, insert, {
 		full: {
 			table: true,
-			contents: [_fnFeatureHtmlTable(settings)]
+			contents: [settings.nTable]
 		}
 	});
 
@@ -3940,17 +3940,6 @@ function _fnProcessingRun(settings, enable, run) {
 	}
 }
 
-// #endregion
-// #region core.scrolling.js
-/**
- * Add any control elements for the table - specifically scrolling
- *  @param {object} settings dataTables settings object
- *  @returns {node} Node to add to the DOM
- *  @memberof DataTable#oApi
- */
-function _fnFeatureHtmlTable(settings) {
-	return settings.nTable;
-}
 // #endregion
 // #region core.sizing.js
 
