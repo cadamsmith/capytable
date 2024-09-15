@@ -3432,10 +3432,7 @@ function _fnStart(oSettings) {
 
 
 // #endregion
-// #region core.ajax.js
-// #endregion
 // #region core.filter.js
-
 
 /**
  * Filter the table using both the global filter and column based filtering
@@ -4560,8 +4557,6 @@ function _fnSortData(settings, colIdx) {
 
 
 // #endregion
-// #region core.state.js
-// #endregion
 // #region core.support.js
 
 /**
@@ -5394,21 +5389,6 @@ _Api.registerPlural = _api_registerPlural = function (pluralName, singularName, 
 };
 
 // #endregion
-
-// #region api.table.js
-
-// #endregion
-
-// #region api.draw.js
-
-// #endregion
-
-// #region api.page.js
-// #endregion
-
-// #region api.ajax.js
-// #endregion
-
 // #region api.selectors.js
 
 var _selector_run = function (type, selector, selectFn, settings, opts) {
@@ -5578,13 +5558,6 @@ var _selector_row_indexes = function (settings, opts) {
 };
 
 // #endregion
-
-// #region api.rows.js
-// #endregion
-
-// #region api.row.details.js
-// #endregion
-
 // #region api.columns.js
 
 
@@ -6004,10 +5977,6 @@ _api_register('column()', function (selector, opts) {
 });
 
 // #endregion
-
-// #region api.cells.js
-// #endregion
-
 // #region api.order.js
 
 /**
@@ -6141,16 +6110,6 @@ _api_registerPlural('columns().orderable()', 'column().orderable()', function (d
 });
 
 // #endregion
-
-// #region api.processing.js
-// #endregion
-
-// #region api.search.js
-// #endregion
-
-// #region api.state.js
-// #endregion
-
 // #region api.static.js
 
 /**
@@ -6369,7 +6328,6 @@ DataTable.tables = function (visible) {
 DataTable.camelToHungarian = _fnCamelToHungarian;
 
 // #endregion
-
 // #region api.core.js
 
 /**
@@ -6651,13 +6609,7 @@ DataTable.models.oSearch = {
 	/**
 	 * Applied search term
 	 */
-	"search": "",
-
-	/**
-	 * Flag to indicate if DataTables should only trigger a search when
-	 * the return key is pressed.
-	 */
-	"return": false
+	"search": ""
 };
 
 
@@ -9072,10 +9024,6 @@ DataTable.feature.register('search', function (settings, opts) {
 
 	var searchFn = function (event) {
 		var val = this.value;
-
-		if (previousSearch.return && event.key !== "Enter") {
-			return;
-		}
 
 		/* Now do the filter */
 		if (val != previousSearch.search) {
