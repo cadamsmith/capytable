@@ -166,7 +166,6 @@ var DataTable = function (selector, options) {
 			"layout",
 			"typeDetect",
 			["oSearch", "oPreviousSearch"],
-			["aoSearchCols", "aoPreSearchCols"],
 			["iDisplayLength", "_iDisplayLength"]
 		]);
 		_fnMap(oSettings.oScroll, oInit, [
@@ -1736,18 +1735,6 @@ function _fnCompatOpts(init) {
 	if (typeof init.scrollX === 'boolean') {
 		init.scrollX = init.scrollX ? '100%' : '';
 	}
-
-	// Column search objects are in an array, so it needs to be converted
-	// element by element
-	var searchCols = init.aoSearchCols;
-
-	if (searchCols) {
-		for (var i = 0, ien = searchCols.length; i < ien; i++) {
-			if (searchCols[i]) {
-				_fnCamelToHungarian(DataTable.models.oSearch, searchCols[i]);
-			}
-		}
-	}
 }
 
 
@@ -1850,12 +1837,6 @@ function _fnAddColumn(oSettings) {
 		colEl: $('<col>').attr('data-dt-column', iCol)
 	});
 	oSettings.aoColumns.push(oCol);
-
-	// Add search object for column specific search. Note that the `searchCols[ iCol ]`
-	// passed into extend can be undefined. This allows the user to give a default
-	// with only some of the parameters defined, and also not give a default
-	var searchCols = oSettings.aoPreSearchCols;
-	searchCols[iCol] = $.extend({}, DataTable.models.oSearch, searchCols[iCol]);
 }
 
 
@@ -3675,10 +3656,6 @@ function _fnStart(oSettings) {
  *  @memberof DataTable#oApi
  */
 function _fnFilterComplete(settings, input) {
-	var columnsSearch = settings.aoPreSearchCols;
-
-	// In server-side processing all filtering is done by the server, so no point hanging around here
-
 	// Check if any of the rows were invalidated
 	_fnFilterData(settings);
 
@@ -3691,23 +3668,6 @@ function _fnFilterComplete(settings, input) {
 	$.each(settings.searchFixed, function (name, term) {
 		_fnFilter(settings.aiDisplay, settings, term, {});
 	});
-
-	// Then individual column filters
-	for (var i = 0; i < columnsSearch.length; i++) {
-		var col = columnsSearch[i];
-
-		_fnFilter(
-			settings.aiDisplay,
-			settings,
-			col.search,
-			col,
-			i
-		);
-
-		$.each(settings.aoColumns[i].searchFixed, function (name, term) {
-			_fnFilter(settings.aiDisplay, settings, term, {}, i);
-		});
-	}
 
 	// And finally global filtering
 	_fnFilterCustom(settings);
@@ -7839,16 +7799,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Basically the same as `search`, this parameter defines the individual column
-	 * filtering state at initialisation time. The array must be of the same size
-	 * as the number of columns, and each element be an object with the parameters
-	 * `search` and `escapeRegex` (the latter is optional). 'null' is also
-	 * accepted and the default will be used.
-	 */
-	"aoSearchCols": [],
-
-
-	/**
 	 * Enable or disable filtering of data. Filtering in DataTables is "smart" in
 	 * that it allows the end user to input multiple words (space separated) and
 	 * will match a row containing those words, even if not in the order that was
@@ -8606,13 +8556,6 @@ DataTable.models.oSettings = {
 	 * Store for named searches
 	 */
 	searchFixed: {},
-
-	/**
-	 * Store the applied search for each column - see
-	 * {@link DataTable.models.oSearch} for the format that is used for the
-	 * filtering information for each column.
-	 */
-	"aoPreSearchCols": [],
 
 	/**
 	 * Sorting that is applied to the table. Note that the inner arrays are
