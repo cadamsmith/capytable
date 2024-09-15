@@ -209,7 +209,7 @@ var DataTable = function (selector, options) {
 		}
 
 		// Apply the column definitions
-		_fnApplyColumnDefs(oSettings, oInit.aoColumnDefs, columnsInit, initHeaderLayout, function (iCol, oDef) {
+		_fnApplyColumnDefs(oSettings, columnsInit, function (iCol, oDef) {
 			_fnColumnOptions(oSettings, iCol, oDef);
 		});
 
@@ -2182,91 +2182,19 @@ function _columnAutoClass(container, colIdx, className) {
  * they relate to column indexes. The callback function will then apply the
  * definition found for a column to a suitable configuration object.
  *  @param {object} oSettings dataTables settings object
- *  @param {array} aoColDefs The aoColumnDefs array that is to be applied
  *  @param {array} aoCols The aoColumns array that defines columns individually
- *  @param {array} headerLayout Layout for header as it was loaded
  *  @param {function} fn Callback function - takes two parameters, the calculated
  *    column index and the definition for that column.
  *  @memberof DataTable#oApi
  */
-function _fnApplyColumnDefs(oSettings, aoColDefs, aoCols, headerLayout, fn) {
-	var i, iLen, j, jLen, k, kLen, def;
+function _fnApplyColumnDefs(oSettings, aoCols, fn) {
+	var i, iLen;
 	var columns = oSettings.aoColumns;
 
 	if (aoCols) {
 		for (i = 0, iLen = aoCols.length; i < iLen; i++) {
 			if (aoCols[i] && aoCols[i].name) {
 				columns[i].sName = aoCols[i].name;
-			}
-		}
-	}
-
-	// Column definitions with aTargets
-	if (aoColDefs) {
-		/* Loop over the definitions array - loop in reverse so first instance has priority */
-		for (i = aoColDefs.length - 1; i >= 0; i--) {
-			def = aoColDefs[i];
-
-			/* Each definition can target multiple columns, as it is an array */
-			var aTargets = def.target !== undefined
-				? def.target
-				: def.targets !== undefined
-					? def.targets
-					: def.aTargets;
-
-			if (!Array.isArray(aTargets)) {
-				aTargets = [aTargets];
-			}
-
-			for (j = 0, jLen = aTargets.length; j < jLen; j++) {
-				var target = aTargets[j];
-
-				if (typeof target === 'number' && target >= 0) {
-					/* Add columns that we don't yet know about */
-					while (columns.length <= target) {
-						_fnAddColumn(oSettings);
-					}
-
-					/* Integer, basic index */
-					fn(target, def);
-				}
-				else if (typeof target === 'number' && target < 0) {
-					/* Negative integer, right to left column counting */
-					fn(columns.length + target, def);
-				}
-				else if (typeof target === 'string') {
-					for (k = 0, kLen = columns.length; k < kLen; k++) {
-						if (target === '_all') {
-							// Apply to all columns
-							fn(k, def);
-						}
-						else if (target.indexOf(':name') !== -1) {
-							// Column selector
-							if (columns[k].sName === target.replace(':name', '')) {
-								fn(k, def);
-							}
-						}
-						else {
-							// Cell selector
-							headerLayout.forEach(function (row) {
-								if (row[k]) {
-									var cell = $(row[k].cell);
-
-									// Legacy support. Note that it means that we don't support
-									// an element name selector only, since they are treated as
-									// class names for 1.x compat.
-									if (target.match(/^[a-z][\w-]*$/i)) {
-										target = '.' + target;
-									}
-
-									if (cell.is(target)) {
-										fn(k, def);
-									}
-								}
-							});
-						}
-					}
-				}
 			}
 		}
 	}
@@ -7551,25 +7479,6 @@ DataTable.defaults = {
 	 * to specify any options).
 	 */
 	"aoColumns": null,
-
-	/**
-	 * Very similar to `columns`, `columnDefs` allows you to target a specific
-	 * column, multiple columns, or all columns, using the `targets` property of
-	 * each object in the array. This allows great flexibility when creating
-	 * tables, as the `columnDefs` arrays can be of any length, targeting the
-	 * columns you specifically want. `columnDefs` may use any of the column
-	 * options available: {@link DataTable.defaults.column}, but it _must_
-	 * have `targets` defined in each object in the array. Values in the `targets`
-	 * array may be:
-	 *   <ul>
-	 *     <li>a string - class name will be matched on the TH for the column</li>
-	 *     <li>0 or a positive integer - column index counting from the left</li>
-	 *     <li>a negative integer - column index counting from the right</li>
-	 *     <li>the string "_all" - all columns (i.e. assign a default)</li>
-	 *   </ul>
-	 */
-	"aoColumnDefs": null,
-
 
 	/**
 	 * Enable or disable filtering of data. Filtering in DataTables is "smart" in
