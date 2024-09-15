@@ -159,7 +159,6 @@ var DataTable = function (selector, options) {
 		_fnMap(oSettings, oInit, [
 			"fnFormatNumber",
 			"aaSorting",
-			"aaSortingFixed",
 			"aLengthMenu",
 			"renderer",
 			"rowId",
@@ -1601,7 +1600,6 @@ var _fnCompatMap = function (o, knew, old) {
 function _fnCompatOpts(init) {
 	_fnCompatMap(init, 'ordering', 'bSort');
 	_fnCompatMap(init, 'order', 'aaSorting');
-	_fnCompatMap(init, 'orderFixed', 'aaSortingFixed');
 	_fnCompatMap(init, 'paging', 'bPaginate');
 	_fnCompatMap(init, 'pageLength', 'iDisplayLength');
 	_fnCompatMap(init, 'searching', 'bFilter');
@@ -4246,8 +4244,6 @@ function _fnSortFlatten(settings) {
 		extSort = DataTable.ext.type.order,
 		aoColumns = settings.aoColumns,
 		aDataSort, iCol, sType, srcCol,
-		fixed = settings.aaSortingFixed,
-		fixedObj = $.isPlainObject(fixed),
 		nestedSort = [];
 
 	if (!settings.oFeatures.bSort) {
@@ -4256,19 +4252,8 @@ function _fnSortFlatten(settings) {
 
 	// Build the sort array, with pre-fix and post-fix options if they have been
 	// specified
-	if (Array.isArray(fixed)) {
-		_fnSortResolve(settings, nestedSort, fixed);
-	}
-
-	if (fixedObj && fixed.pre) {
-		_fnSortResolve(settings, nestedSort, fixed.pre);
-	}
 
 	_fnSortResolve(settings, nestedSort, settings.aaSorting);
-
-	if (fixedObj && fixed.post) {
-		_fnSortResolve(settings, nestedSort, fixed.post);
-	}
 
 	for (i = 0; i < nestedSort.length; i++) {
 		srcCol = nestedSort[i][0];
@@ -6051,25 +6036,6 @@ _api_register('order.listener()', function (node, column, callback) {
 	});
 });
 
-
-_api_register('order.fixed()', function (set) {
-	if (!set) {
-		var ctx = this.context;
-		var fixed = ctx.length ?
-			ctx[0].aaSortingFixed :
-			undefined;
-
-		return Array.isArray(fixed) ?
-			{ pre: fixed } :
-			fixed;
-	}
-
-	return this.iterator('table', function (settings) {
-		settings.aaSortingFixed = $.extend(true, {}, set);
-	});
-});
-
-
 // Order by the selected column(s)
 _api_register([
 	'columns().order()',
@@ -6475,7 +6441,6 @@ _api_register('destroy()', function (remove) {
 		settings.colgroup.remove();
 
 		settings.aaSorting = [];
-		settings.aaSortingFixed = [];
 		_fnSortingClasses(settings);
 
 		$('th, td', thead)
@@ -6866,17 +6831,6 @@ DataTable.defaults = {
 	 * the column's index and a direction string ('asc' or 'desc').
 	 */
 	"aaSorting": [[0, 'asc']],
-
-
-	/**
-	 * This parameter is basically identical to the `sorting` parameter, but
-	 * cannot be overridden by user interaction with the table. What this means
-	 * is that you could have a column (visible or hidden) which the sorting
-	 * will always be forced on first - any sorting after that (from the user)
-	 * will then be performed as required. This can be useful for grouping rows
-	 * together.
-	 */
-	"aaSortingFixed": [],
 
 
 	/**
@@ -7563,14 +7517,6 @@ DataTable.models.oSettings = {
 	 * set a default use {@link DataTable.defaults}.
 	 */
 	"aaSorting": null,
-
-	/**
-	 * Sorting that is always applied to the table (i.e. prefixed in front of
-	 * aaSorting).
-	 * Note that this parameter will be set by the initialisation routine. To
-	 * set a default use {@link DataTable.defaults}.
-	 */
-	"aaSortingFixed": [],
 
 	/**
 	 * If restoring a table - we should restore its width
