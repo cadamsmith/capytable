@@ -168,11 +168,6 @@ var DataTable = function (selector, options) {
 			["oSearch", "oPreviousSearch"],
 			["iDisplayLength", "_iDisplayLength"]
 		]);
-		_fnMap(oSettings.oScroll, oInit, [
-			["sScrollX", "sX"],
-			["sScrollXInner", "sXInner"],
-			["sScrollY", "sY"],
-		]);
 
 		oSettings.rowIdFn = _fnGetObjectDataFn(oInit.rowId);
 
@@ -1699,14 +1694,6 @@ function _fnCompatOpts(init) {
 	_fnCompatMap(init, 'paging', 'bPaginate');
 	_fnCompatMap(init, 'pageLength', 'iDisplayLength');
 	_fnCompatMap(init, 'searching', 'bFilter');
-
-	// Boolean initialisation of x-scrolling
-	if (typeof init.sScrollX === 'boolean') {
-		init.sScrollX = init.sScrollX ? '100%' : '';
-	}
-	if (typeof init.scrollX === 'boolean') {
-		init.scrollX = init.scrollX ? '100%' : '';
-	}
 }
 
 
@@ -1921,11 +1908,6 @@ function _fnColumnOptions(oSettings, iCol, oOptions) {
 function _fnAdjustColumnSizing(settings) {
 	_fnCalculateColumnWidths(settings);
 	_fnColumnSizes(settings);
-
-	var scroll = settings.oScroll;
-	if (scroll.sY !== '' || scroll.sX !== '') {
-		_fnScrollDraw(settings);
-	}
 
 	_fnCallbackFire(settings, null, 'column-sizing', [settings]);
 }
@@ -4097,145 +4079,7 @@ function _fnProcessingRun(settings, enable, run) {
  *  @memberof DataTable#oApi
  */
 function _fnFeatureHtmlTable(settings) {
-	var table = $(settings.nTable);
-
-	// Scrolling from here on in
-	var scroll = settings.oScroll;
-
-	if (scroll.sX === '' && scroll.sY === '') {
-		return settings.nTable;
-	}
-
-	var scrollX = scroll.sX;
-	var scrollY = scroll.sY;
-	var classes = settings.oClasses.scrolling;
-	var caption = settings.captionNode;
-	var captionSide = caption ? caption._captionSide : null;
-	var headerClone = $(table[0].cloneNode(false));
-	var footerClone = $(table[0].cloneNode(false));
-	var footer = table.children('tfoot');
-	var _div = '<div/>';
-	var size = function (s) {
-		return !s ? null : _fnStringToCss(s);
-	};
-
-	if (!footer.length) {
-		footer = null;
-	}
-
-	/*
-	 * The HTML structure that we want to generate in this function is:
-	 *  div - scroller
-	 *    div - scroll head
-	 *      div - scroll head inner
-	 *        table - scroll head table
-	 *          thead - thead
-	 *    div - scroll body
-	 *      table - table (master table)
-	 *        thead - thead clone for sizing
-	 *        tbody - tbody
-	 *    div - scroll foot
-	 *      div - scroll foot inner
-	 *        table - scroll foot table
-	 *          tfoot - tfoot
-	 */
-	var scroller = $(_div, { 'class': classes.container })
-		.append(
-			$(_div, { 'class': classes.header.self })
-				.css({
-					overflow: 'hidden',
-					position: 'relative',
-					border: 0,
-					width: scrollX ? size(scrollX) : '100%'
-				})
-				.append(
-					$(_div, { 'class': classes.header.inner })
-						.css({
-							'box-sizing': 'content-box',
-							width: scroll.sXInner || '100%'
-						})
-						.append(
-							headerClone
-								.removeAttr('id')
-								.css('margin-left', 0)
-								.append(captionSide === 'top' ? caption : null)
-								.append(
-									table.children('thead')
-								)
-						)
-				)
-		)
-		.append(
-			$(_div, { 'class': classes.body })
-				.css({
-					position: 'relative',
-					overflow: 'auto',
-					width: size(scrollX)
-				})
-				.append(table)
-		);
-
-	if (footer) {
-		scroller.append(
-			$(_div, { 'class': classes.footer.self })
-				.css({
-					overflow: 'hidden',
-					border: 0,
-					width: scrollX ? size(scrollX) : '100%'
-				})
-				.append(
-					$(_div, { 'class': classes.footer.inner })
-						.append(
-							footerClone
-								.removeAttr('id')
-								.css('margin-left', 0)
-								.append(captionSide === 'bottom' ? caption : null)
-								.append(
-									table.children('tfoot')
-								)
-						)
-				)
-		);
-	}
-
-	var children = scroller.children();
-	var scrollHead = children[0];
-	var scrollBody = children[1];
-	var scrollFoot = footer ? children[2] : null;
-
-	// When the body is scrolled, then we also want to scroll the headers
-	$(scrollBody).on('scroll.DT', function () {
-		var scrollLeft = this.scrollLeft;
-
-		scrollHead.scrollLeft = scrollLeft;
-
-		if (footer) {
-			scrollFoot.scrollLeft = scrollLeft;
-		}
-	});
-
-	// When focus is put on the header cells, we might need to scroll the body
-	$('th, td', scrollHead).on('focus', function () {
-		var scrollLeft = scrollHead.scrollLeft;
-
-		scrollBody.scrollLeft = scrollLeft;
-
-		if (footer) {
-			scrollBody.scrollLeft = scrollLeft;
-		}
-	});
-
-	$(scrollBody).css('max-height', scrollY);
-	$(scrollBody).css('height', scrollY);
-
-	settings.nScrollHead = scrollHead;
-	settings.nScrollBody = scrollBody;
-	settings.nScrollFoot = scrollFoot;
-
-	// On redraw - align columns
-	settings.aoDrawCallback.push(_fnScrollDraw);
-
-	return scroller[0];
+	return settings.nTable;
 }
 
 /**
@@ -4419,10 +4263,6 @@ function _fnCalculateColumnWidths(settings) {
 	var
 		table = settings.nTable,
 		columns = settings.aoColumns,
-		scroll = settings.oScroll,
-		scrollY = scroll.sY,
-		scrollX = scroll.sX,
-		scrollXInner = scroll.sXInner,
 		visibleColumns = _fnGetColumns(settings, 'bVisible'),
 		tableWidthAttr = table.getAttribute('width'), // from DOM element
 		tableContainer = table.parentNode,
@@ -4485,19 +4325,6 @@ function _fnCalculateColumnWidths(settings) {
 			// been specified
 			this.style.width = width;
 			this.style.minWidth = width;
-
-			// For scrollX we need to force the column width otherwise the
-			// browser will collapse it. If this width is smaller than the
-			// width the column requires, then it will have no effect
-			if (scrollX) {
-				$(this).append($('<div/>').css({
-					width: width,
-					margin: 0,
-					padding: 0,
-					border: 0,
-					height: 1
-				}));
-			}
 		}
 		else {
 			this.style.width = '';
@@ -4532,40 +4359,14 @@ function _fnCalculateColumnWidths(settings) {
 	// with minimal height, so it has no effect on if the container scrolls
 	// or not. Otherwise it might trigger scrolling when it actually isn't
 	// needed
-	var holder = $('<div/>').css(scrollX || scrollY ?
-		{
-			position: 'absolute',
-			top: 0,
-			left: 0,
-			height: 1,
-			right: 0,
-			overflow: 'hidden'
-		} :
-		{}
-	)
+	var holder = $('<div/>').css({})
 		.append(tmpTable)
 		.appendTo(tableContainer);
 
 	// When scrolling (X or Y) we want to set the width of the table as 
 	// appropriate. However, when not scrolling leave the table width as it
 	// is. This results in slightly different, but I think correct behaviour
-	if (scrollX && scrollXInner) {
-		tmpTable.width(scrollXInner);
-	}
-	else if (scrollX) {
-		tmpTable.css('width', 'auto');
-		tmpTable.removeAttr('width');
-
-		// If there is no width attribute or style, then allow the table to
-		// collapse
-		if (tmpTable.width() < tableContainer.clientWidth && tableWidthAttr) {
-			tmpTable.width(tableContainer.clientWidth);
-		}
-	}
-	else if (scrollY) {
-		tmpTable.width(tableContainer.clientWidth);
-	}
-	else if (tableWidthAttr) {
+	if (tableWidthAttr) {
 		tmpTable.width(tableWidthAttr);
 	}
 
@@ -4598,7 +4399,7 @@ function _fnCalculateColumnWidths(settings) {
 		table.style.width = _fnStringToCss(tableWidthAttr);
 	}
 
-	if ((tableWidthAttr || scrollX) && !settings._reszEvt) {
+	if ((tableWidthAttr) && !settings._reszEvt) {
 		var bindResize = function () {
 			$(window).on('resize.DT-' + settings.sInstance, DataTable.util.throttle(function () {
 				if (!settings.bDestroying) {
@@ -8019,40 +7820,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Enable horizontal scrolling. When a table is too wide to fit into a
-	 * certain layout, or you have a large number of columns in the table, you
-	 * can enable x-scrolling to show the table in a viewport, which can be
-	 * scrolled. This property can be `true` which will allow the table to
-	 * scroll horizontally when needed, or any CSS unit, or a number (in which
-	 * case it will be treated as a pixel measurement). Setting as simply `true`
-	 * is recommended.
-	 */
-	"sScrollX": "",
-
-
-	/**
-	 * This property can be used to force a DataTable to use more width than it
-	 * might otherwise do when x-scrolling is enabled. For example if you have a
-	 * table which requires to be well spaced, this parameter is useful for
-	 * "over-sizing" the table, and thus forcing scrolling. This property can by
-	 * any CSS unit, or a number (in which case it will be treated as a pixel
-	 * measurement).
-	 */
-	"sScrollXInner": "",
-
-
-	/**
-	 * Enable vertical scrolling. Vertical scrolling will constrain the DataTable
-	 * to the given height, and enable scrolling for any data which overflows the
-	 * current viewport. This can be used as an alternative to paging to display
-	 * a lot of data in a small area (although paging and scrolling can both be
-	 * enabled at the same time). This property can be any CSS unit, or a number
-	 * (in which case it will be treated as a pixel measurement).
-	 */
-	"sScrollY": "",
-
-
-	/**
 	 * DataTables makes use of renderers when displaying HTML elements for
 	 * a table. These renderers can be added or modified by plug-ins to
 	 * generate suitable mark-up for a site. For example the Bootstrap
@@ -8380,31 +8147,6 @@ DataTable.models.oSettings = {
 		 * during table initialisation.
 		 */
 		"iBarWidth": 0,
-
-		/**
-		 * Viewport width for horizontal scrolling. Horizontal scrolling is
-		 * disabled if an empty string.
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 */
-		"sX": null,
-
-		/**
-		 * Width to expand the table to when using x-scrolling. Typically you
-		 * should not need to use this.
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 *  @deprecated
-		 */
-		"sXInner": null,
-
-		/**
-		 * Viewport height for vertical scrolling. Vertical scrolling is disabled
-		 * if an empty string.
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 */
-		"sY": null
 	},
 
 	/**
