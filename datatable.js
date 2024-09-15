@@ -151,7 +151,6 @@ var DataTable = function (selector, options) {
 			"aaSorting",
 			"aLengthMenu",
 			"rowId",
-			"layout",
 			"typeDetect",
 			["oSearch", "oPreviousSearch"],
 		]);
@@ -3119,7 +3118,14 @@ function _layoutGetRow(rows, rowNum, align) {
  * @param {string} side `top` or `bottom`
  * @returns Converted array structure - one item for each row.
  */
-function _layoutArray(settings, layout, side) {
+function _layoutArray(settings, side) {
+	var layout = {
+		topStart: 'pageLength',
+		topEnd: 'search',
+		bottomStart: 'info',
+		bottomEnd: 'paging'
+	};
+
 	var rows = [];
 
 	// Split out into an array
@@ -3252,8 +3258,8 @@ function _fnAddOptionsHtml(settings) {
 
 	settings.nTableWrapper = insert[0];
 
-	var top = _layoutArray(settings, settings.layout, 'top');
-	var bottom = _layoutArray(settings, settings.layout, 'bottom');
+	var top = _layoutArray(settings, 'top');
+	var bottom = _layoutArray(settings, 'bottom');
 	var renderer = _fnRenderer('layout');
 
 	// Everything above - the renderer will actually insert the contents into the document
@@ -7030,17 +7036,6 @@ DataTable.defaults = {
 	 * any point in the data), when false this will not be done.
 	 */
 	"oSearch": $.extend({}, DataTable.models.oSearch),
-
-
-	/**
-	 * Table and control layout. This replaces the legacy `dom` option.
-	 */
-	layout: {
-		topStart: 'pageLength',
-		topEnd: 'search',
-		bottomStart: 'info',
-		bottomEnd: 'paging'
-	},
 
 
 	/**
