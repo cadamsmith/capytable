@@ -8029,15 +8029,6 @@ DataTable.defaults = {
 
 
 		/**
-		 * If can be useful to append extra information to the info string at times,
-		 * and this variable does exactly that. This information will be appended to
-		 * the `info` (`infoEmpty` and `infoFiltered` in whatever combination they are
-		 * being used) at all times.
-		 */
-		"sInfoPostFix": "",
-
-
-		/**
 		 * This decimal place operator is a little different from the other
 		 * language options since DataTables doesn't output floating point
 		 * numbers, so it won't ever use this for display of a number. Rather,
@@ -9995,7 +9986,6 @@ DataTable.feature.register('info', function (settings, opts) {
 	opts = $.extend({
 		callback: null,
 		empty: lang.sInfoEmpty,
-		postfix: lang.sInfoPostFix,
 		search: lang.sInfoFiltered,
 		text: lang.sInfo,
 	}, opts);
@@ -10044,7 +10034,6 @@ function _fnUpdateInfo(settings, opts, node) {
 	}
 
 	// Convert the macros
-	out += opts.postfix;
 	out = _fnMacros(settings, out);
 
 	if (opts.callback) {
