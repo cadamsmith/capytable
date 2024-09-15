@@ -974,7 +974,7 @@ var _numToDecimal = function (num, decimalPoint) {
 };
 
 
-var _isNumber = function (d, decimalPoint, formatted, allowEmpty) {
+var _isNumber = function (d, formatted, allowEmpty) {
 	var type = typeof d;
 	var strType = type === 'string';
 
@@ -987,10 +987,6 @@ var _isNumber = function (d, decimalPoint, formatted, allowEmpty) {
 	// as a formatted number for currency
 	if (allowEmpty && _empty(d)) {
 		return true;
-	}
-
-	if (decimalPoint && strType) {
-		d = _numToDecimal(d, decimalPoint);
 	}
 
 	if (formatted && strType) {
@@ -1007,7 +1003,7 @@ var _isHtml = function (d) {
 };
 
 // Is a string a number surrounded by HTML?
-var _htmlNumeric = function (d, decimalPoint, formatted, allowEmpty) {
+var _htmlNumeric = function (d, formatted, allowEmpty) {
 	if (allowEmpty && _empty(d)) {
 		return true;
 	}
@@ -1020,7 +1016,7 @@ var _htmlNumeric = function (d, decimalPoint, formatted, allowEmpty) {
 	var html = _isHtml(d);
 	return !html ?
 		null :
-		_isNumber(_stripHtml(d), decimalPoint, formatted, allowEmpty) ?
+		_isNumber(_stripHtml(d), formatted, allowEmpty) ?
 			true :
 			null;
 };
@@ -7955,22 +7951,6 @@ DataTable.defaults = {
 
 
 		/**
-		 * This decimal place operator is a little different from the other
-		 * language options since DataTables doesn't output floating point
-		 * numbers, so it won't ever use this for display of a number. Rather,
-		 * what this parameter does is modify the sort methods of the table so
-		 * that numbers which are in a format which has a character other than
-		 * a period (`.`) as a decimal place will be sorted numerically.
-		 *
-		 * Note that numbers with different decimal places cannot be shown in
-		 * the same table and still be sortable, the table must be consistent.
-		 * However, multiple different tables on the page can use different
-		 * decimal place characters.
-		 */
-		"sDecimal": "",
-
-
-		/**
 		 * DataTables has a build in number formatter (`formatNumber`) which is
 		 * used to format large numbers that are used in the table information.
 		 * By default a comma is used, but this can be trivially changed to any
@@ -9536,20 +9516,17 @@ DataTable.type('date', {
 DataTable.type('html-num-fmt', {
 	className: 'dt-type-numeric',
 	detect: {
-		allOf: function (d, settings) {
-			var decimal = settings.oLanguage.sDecimal;
-			return _htmlNumeric(d, decimal, true, false);
+		allOf: function (d) {
+			return _htmlNumeric(d, true, false);
 		},
-		oneOf: function (d, settings) {
+		oneOf: function (d) {
 			// At least one data point must contain a numeric value
-			var decimal = settings.oLanguage.sDecimal;
-			return _htmlNumeric(d, decimal, true, false);
+			return _htmlNumeric(d, true, false);
 		}
 	},
 	order: {
-		pre: function (d, s) {
-			var dp = s.oLanguage.sDecimal;
-			return __numericReplace(d, dp, _re_html, _re_formatted_numeric);
+		pre: function (d) {
+			return __numericReplace(d, _re_html, _re_formatted_numeric);
 		}
 	},
 	search: _filterString(true, true)
@@ -9560,19 +9537,16 @@ DataTable.type('html-num', {
 	className: 'dt-type-numeric',
 	detect: {
 		allOf: function (d, settings) {
-			var decimal = settings.oLanguage.sDecimal;
-			return _htmlNumeric(d, decimal, false, true);
+			return _htmlNumeric(d, false, true);
 		},
 		oneOf: function (d, settings) {
 			// At least one data point must contain a numeric value
-			var decimal = settings.oLanguage.sDecimal;
-			return _htmlNumeric(d, decimal, false, false);
+			return _htmlNumeric(d, false, false);
 		}
 	},
 	order: {
-		pre: function (d, s) {
-			var dp = s.oLanguage.sDecimal;
-			return __numericReplace(d, dp, _re_html);
+		pre: function (d) {
+			return __numericReplace(d, _re_html);
 		}
 	},
 	search: _filterString(true, true)
@@ -9582,20 +9556,17 @@ DataTable.type('html-num', {
 DataTable.type('num-fmt', {
 	className: 'dt-type-numeric',
 	detect: {
-		allOf: function (d, settings) {
-			var decimal = settings.oLanguage.sDecimal;
-			return _isNumber(d, decimal, true, true);
+		allOf: function (d) {
+			return _isNumber(d, true, true);
 		},
-		oneOf: function (d, settings) {
+		oneOf: function (d) {
 			// At least one data point must contain a numeric value
-			var decimal = settings.oLanguage.sDecimal;
-			return _isNumber(d, decimal, true, false);
+			return _isNumber(d, true, false);
 		}
 	},
 	order: {
-		pre: function (d, s) {
-			var dp = s.oLanguage.sDecimal;
-			return __numericReplace(d, dp, _re_formatted_numeric);
+		pre: function (d) {
+			return __numericReplace(d, _re_formatted_numeric);
 		}
 	}
 });
@@ -9604,20 +9575,17 @@ DataTable.type('num-fmt', {
 DataTable.type('num', {
 	className: 'dt-type-numeric',
 	detect: {
-		allOf: function (d, settings) {
-			var decimal = settings.oLanguage.sDecimal;
-			return _isNumber(d, decimal, false, true);
+		allOf: function (d) {
+			return _isNumber(d, false, true);
 		},
-		oneOf: function (d, settings) {
+		oneOf: function (d) {
 			// At least one data point must contain a numeric value
-			var decimal = settings.oLanguage.sDecimal;
-			return _isNumber(d, decimal, false, false);
+			return _isNumber(d, false, false);
 		}
 	},
 	order: {
-		pre: function (d, s) {
-			var dp = s.oLanguage.sDecimal;
-			return __numericReplace(d, dp);
+		pre: function (d) {
+			return __numericReplace(d);
 		}
 	}
 });
@@ -9628,7 +9596,7 @@ DataTable.type('num', {
 // #region ext.sorting.js
 
 
-var __numericReplace = function (d, decimalPlace, re1, re2) {
+var __numericReplace = function (d, re1, re2) {
 	if (d !== 0 && (!d || d === '-')) {
 		return -Infinity;
 	}
@@ -9637,13 +9605,6 @@ var __numericReplace = function (d, decimalPlace, re1, re2) {
 
 	if (type === 'number' || type === 'bigint') {
 		return d;
-	}
-
-	// If a decimal place other than `.` is used, it needs to be given to the
-	// function so we can detect it and replace with a `.` which is the only
-	// decimal place Javascript recognises - it is not locale aware.
-	if (decimalPlace) {
-		d = _numToDecimal(d, decimalPlace);
 	}
 
 	if (d.replace) {
