@@ -3510,82 +3510,6 @@ function _fnAddOptionsHtml(settings) {
 }
 
 /**
- * Draw the table with the legacy DOM property
- * @param {*} settings DT settings object
- * @param {*} dom DOM string
- * @param {*} insert Insert point
- */
-function _fnLayoutDom(settings, dom, insert) {
-	var parts = dom.match(/(".*?")|('.*?')|./g);
-	var featureNode, option, newNode, next, attr;
-
-	for (var i = 0; i < parts.length; i++) {
-		featureNode = null;
-		option = parts[i];
-
-		if (option == '<') {
-			// New container div
-			newNode = $('<div/>');
-
-			// Check to see if we should append an id and/or a class name to the container
-			next = parts[i + 1];
-
-			if (next[0] == "'" || next[0] == '"') {
-				attr = next.replace(/['"]/g, '');
-
-				var id = '', className;
-
-				/* The attribute can be in the format of "#id.class", "#id" or "class" This logic
-				 * breaks the string into parts and applies them as needed
-				 */
-				if (attr.indexOf('.') != -1) {
-					var split = attr.split('.');
-
-					id = split[0];
-					className = split[1];
-				}
-				else if (attr[0] == "#") {
-					id = attr;
-				}
-				else {
-					className = attr;
-				}
-
-				newNode
-					.attr('id', id.substring(1))
-					.addClass(className);
-
-				i++; // Move along the position array
-			}
-
-			insert.append(newNode);
-			insert = newNode;
-		}
-		else if (option == '>') {
-			// End container div
-			insert = insert.parent();
-		}
-		else if (option == 't') {
-			// Table
-			featureNode = _fnFeatureHtmlTable(settings);
-		}
-		else {
-			DataTable.ext.feature.forEach(function (feature) {
-				if (option == feature.cFeature) {
-					featureNode = feature.fnInit(settings);
-				}
-			});
-		}
-
-		// Add to the display
-		if (featureNode) {
-			insert.append(featureNode);
-		}
-	}
-}
-
-
-/**
  * Use the DOM source to create up an array of header cells. The idea here is to
  * create a layout grid (array) of rows x columns, which contains a reference
  * to the cell that that point in the grid (regardless of col/rowspan), such that
@@ -4393,8 +4317,6 @@ function _fnFeatureHtmlTable(settings) {
 
 	return scroller[0];
 }
-
-
 
 /**
  * Update the header, footer and body tables for resizing - i.e. column
