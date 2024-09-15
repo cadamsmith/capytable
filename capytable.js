@@ -2947,9 +2947,8 @@ function _fnDraw(oSettings) {
  *    the paging is reset to the first page
  *  @memberof DataTable#oApi
  */
-function _fnReDraw(settings, holdPosition, recompute) {
-	var
-		features = settings.oFeatures,
+function _fnReDraw(settings, recompute) {
+	var features = settings.oFeatures,
 		sort = features.bSort,
 		filter = features.bFilter;
 
@@ -2962,7 +2961,7 @@ function _fnReDraw(settings, holdPosition, recompute) {
 		}
 
 		if (filter) {
-			_fnFilterComplete(settings, settings.oPreviousSearch);
+			_fnFilterComplete(settings, settings.oPreviousSearch.search);
 		}
 		else {
 			// No filtering, so we want to just use the display master
@@ -2970,17 +2969,9 @@ function _fnReDraw(settings, holdPosition, recompute) {
 		}
 	}
 
-	if (holdPosition !== true) {
-		settings._iDisplayStart = 0;
-	}
-
-	// Let any modules know about the draw hold position state (used by
-	// scrolling internally)
-	settings._drawHold = holdPosition;
+	settings._iDisplayStart = 0;
 
 	_fnDraw(settings);
-
-	settings._drawHold = false;
 }
 
 
@@ -3425,10 +3416,10 @@ function _fnStart(oSettings) {
 /**
  * Filter the table using both the global filter and column based filtering
  *  @param {object} settings dataTables settings object
- *  @param {object} input search information
+ *  @param {string} search filter string
  *  @memberof DataTable#oApi
  */
-function _fnFilterComplete(settings, input) {
+function _fnFilterComplete(settings, search) {
 	// Check if any of the rows were invalidated
 	_fnFilterData(settings);
 
@@ -3436,7 +3427,7 @@ function _fnFilterComplete(settings, input) {
 	settings.aiDisplay = settings.aiDisplayMaster.slice();
 
 	// Global filter first
-	_fnFilter(settings.aiDisplay, settings, input.search, input);
+	_fnFilter(settings.aiDisplay, settings, search);
 
 	// Tell the draw function we have been filtering
 	settings.bFiltered = true;
@@ -3447,7 +3438,7 @@ function _fnFilterComplete(settings, input) {
 /**
  * Filter the data table based on user input and draw the table
  */
-function _fnFilter(searchRows, settings, input, options, column) {
+function _fnFilter(searchRows, settings, input) {
 	if (input === '') {
 		return;
 	}
@@ -3457,21 +3448,14 @@ function _fnFilter(searchRows, settings, input, options, column) {
 
 	// Search term can be a function, regex or string - if a string we apply our
 	// smart filtering regex (assuming the options require that)
-	var searchFunc = typeof input === 'function' ? input : null;
-	var rpSearch = input instanceof RegExp
-		? input
-		: searchFunc
-			? null
-			: _fnFilterCreateSearch(input, options);
+	var rpSearch = _fnFilterCreateSearch(input);
 
 	// Then for each row, does the test pass. If not, lop the row from the array
 	for (i = 0; i < searchRows.length; i++) {
 		var row = settings.aoData[searchRows[i]];
-		var data = column === undefined
-			? row._sFilterRow
-			: row._aFilterData[column];
+		var data = row._sFilterRow;
 
-		if ((searchFunc && searchFunc(data, row._aData, searchRows[i], column)) || (rpSearch && rpSearch.test(data))) {
+		if (rpSearch && rpSearch.test(data)) {
 			matched.push(searchRows[i]);
 		}
 	}
@@ -3491,12 +3475,8 @@ function _fnFilter(searchRows, settings, input, options, column) {
  *  @returns {RegExp} constructed object
  *  @memberof DataTable#oApi
  */
-function _fnFilterCreateSearch(search, inOpts) {
+function _fnFilterCreateSearch(search) {
 	var not = [];
-	var options = $.extend({}, {
-		boundary: false,
-		exact: false,
-	}, inOpts);
 
 	if (typeof search !== 'string') {
 		search = search.toString();
@@ -3504,13 +3484,6 @@ function _fnFilterCreateSearch(search, inOpts) {
 
 	// Remove diacritics if normalize is set up to do so
 	search = _normalize(search);
-
-	if (options.exact) {
-		return new RegExp(
-			'^' + _fnEscapeRegex(search) + '$',
-			'i'
-		);
-	}
 
 	search = _fnEscapeRegex(search);
 
@@ -3562,9 +3535,7 @@ function _fnFilterCreateSearch(search, inOpts) {
 		? not.join('')
 		: '';
 
-	var boundary = options.boundary
-		? '\\b'
-		: '';
+	var boundary = '';
 
 	search = '^(?=.*?' + boundary + a.join(')(?=.*?' + boundary) + ')(' + match + '.)*$';
 
@@ -4141,7 +4112,7 @@ function _fnSortAttachListener(settings, node, selector, column, callback) {
 					_fnSort(settings);
 					_fnSortDisplay(settings, settings.aiDisplay);
 
-					_fnReDraw(settings, false, false);
+					_fnReDraw(settings, false);
 
 					if (callback) {
 						callback();
@@ -8944,7 +8915,7 @@ DataTable.feature.register('search', function (settings, opts) {
 			_fnProcessingRun(settings, opts.processing, function () {
 				previousSearch.search = val;
 
-				_fnFilterComplete(settings, previousSearch);
+				_fnFilterComplete(settings, previousSearch.search);
 
 				// Need to redraw, without resorting
 				settings._iDisplayStart = 0;
