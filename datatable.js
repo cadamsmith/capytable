@@ -2191,15 +2191,8 @@ function _fnAddData(settings, dataIn, tr, tds) {
  *  @memberof DataTable#oApi
  */
 function _fnAddTr(settings, trs) {
-	var row;
-
-	// Allow an individual node to be passed in
-	if (!(trs instanceof $)) {
-		trs = $(trs);
-	}
-
-	return trs.map(function (i, el) {
-		row = _fnGetRowElements(settings, el);
+	return trs.map(function (el) {
+		const row = _fnGetRowElements(settings, el);
 		return _fnAddData(settings, row.data, el, row.cells);
 	});
 }
@@ -2370,7 +2363,7 @@ function _fnClearTable(settings) {
  *   them from here).
  * @memberof DataTable#oApi
  */
-function _fnGetRowElements(settings, row, colIdx, d) {
+function _fnGetRowElements(settings, row) {
 	var
 		tds = [],
 		td = row.firstChild,
@@ -2379,11 +2372,7 @@ function _fnGetRowElements(settings, row, colIdx, d) {
 		objectRead = settings._rowReadObject;
 
 	// Allow the data object to be passed in, or construct
-	d = d !== undefined ?
-		d :
-		objectRead ?
-			{} :
-			[];
+	var d = objectRead ? {} : [];
 
 	var attr = function (str, td) {
 		if (typeof str === 'string') {
@@ -2399,31 +2388,29 @@ function _fnGetRowElements(settings, row, colIdx, d) {
 
 	// Read data from a cell and store into the data object
 	var cellProcess = function (cell) {
-		if (colIdx === undefined || colIdx === i) {
-			col = columns[i];
-			contents = (cell.innerHTML).trim();
+		col = columns[i];
+		contents = (cell.innerHTML).trim();
 
-			if (col && col._bAttrSrc) {
-				var setter = _fnSetObjectDataFn(col.mData._);
-				setter(d, contents);
+		if (col && col._bAttrSrc) {
+			var setter = _fnSetObjectDataFn(col.mData._);
+			setter(d, contents);
 
-				attr(col.mData.sort, cell);
-				attr(col.mData.type, cell);
-				attr(col.mData.filter, cell);
+			attr(col.mData.sort, cell);
+			attr(col.mData.type, cell);
+			attr(col.mData.filter, cell);
+		}
+		else {
+			// Depending on the `data` option for the columns the data can
+			// be read to either an object or an array.
+			if (objectRead) {
+				if (!col._setter) {
+					// Cache the setter function
+					col._setter = _fnSetObjectDataFn(col.mData);
+				}
+				col._setter(d, contents);
 			}
 			else {
-				// Depending on the `data` option for the columns the data can
-				// be read to either an object or an array.
-				if (objectRead) {
-					if (!col._setter) {
-						// Cache the setter function
-						col._setter = _fnSetObjectDataFn(col.mData);
-					}
-					col._setter(d, contents);
-				}
-				else {
-					d[i] = contents;
-				}
+				d[i] = contents;
 			}
 		}
 
@@ -3627,7 +3614,8 @@ function _fnInitialise(settings) {
 	_fnDrawHead(settings, settings.aoFooter);
 
 	// Grab the data from the page
-	_fnAddTr(settings, $(settings.nTBody).children('tr'));
+	const rows = [...settings.nTBody.querySelectorAll(':scope > tr')];
+	_fnAddTr(settings, rows);
 
 	// Filter not yet applied - copy the display master
 	settings.aiDisplay = settings.aiDisplayMaster.slice();
