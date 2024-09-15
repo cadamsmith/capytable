@@ -316,32 +316,8 @@ var DataTable = function (selector, options) {
 		var oLanguage = oSettings.oLanguage;
 		$.extend(true, oLanguage, oInit.oLanguage);
 
-		if (oLanguage.sUrl) {
-			// Get the language definitions from a file
-			$.ajax({
-				dataType: 'json',
-				url: oLanguage.sUrl,
-				success: function (json) {
-					_fnCamelToHungarian(defaults.oLanguage, json);
-					$.extend(true, oLanguage, json, oSettings.oInit.oLanguage);
-
-					_fnCallbackFire(oSettings, null, 'i18n', [oSettings], true);
-					_fnInitialise(oSettings);
-				},
-				error: function () {
-					// Error occurred loading language file
-					_fnLog(oSettings, 0, 'i18n file loading error', 21);
-
-					// Continue on as best we can
-					_fnInitialise(oSettings);
-				}
-			});
-		}
-		else {
-			_fnCallbackFire(oSettings, null, 'i18n', [oSettings], true);
-			_fnInitialise(oSettings);
-		}
-
+		_fnCallbackFire(oSettings, null, 'i18n', [oSettings], true);
+		_fnInitialise(oSettings);
 	});
 	_that = null;
 	return this;
@@ -8029,17 +8005,6 @@ DataTable.defaults = {
 		 * then the input box is appended to the string automatically.
 		 */
 		"sSearch": "Search:",
-
-
-		/**
-		 * All of the language information can be stored in a file on the
-		 * server-side, which DataTables will look up if this parameter is passed.
-		 * It must store the URL of the language file, which is in a JSON format,
-		 * and the object has the same properties as the oLanguage object in the
-		 * initialiser object (i.e. the above parameters). Please refer to one of
-		 * the example language files to see how this works in action.
-		 */
-		"sUrl": "",
 
 
 		/**
