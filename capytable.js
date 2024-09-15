@@ -163,7 +163,6 @@ var DataTable = function (selector, options) {
 			"aaSortingFixed",
 			"aLengthMenu",
 			"sPaginationType",
-			"sDom",
 			"renderer",
 			"rowId",
 			"caption",
@@ -3487,33 +3486,27 @@ function _fnAddOptionsHtml(settings) {
 
 	settings.nTableWrapper = insert[0];
 
-	if (settings.sDom) {
-		// Legacy
-		_fnLayoutDom(settings, settings.sDom, insert);
-	}
-	else {
-		var top = _layoutArray(settings, settings.layout, 'top');
-		var bottom = _layoutArray(settings, settings.layout, 'bottom');
-		var renderer = _fnRenderer(settings, 'layout');
+	var top = _layoutArray(settings, settings.layout, 'top');
+	var bottom = _layoutArray(settings, settings.layout, 'bottom');
+	var renderer = _fnRenderer(settings, 'layout');
 
-		// Everything above - the renderer will actually insert the contents into the document
-		top.forEach(function (item) {
-			renderer(settings, insert, item);
-		});
+	// Everything above - the renderer will actually insert the contents into the document
+	top.forEach(function (item) {
+		renderer(settings, insert, item);
+	});
 
-		// The table - always the center of attention
-		renderer(settings, insert, {
-			full: {
-				table: true,
-				contents: [_fnFeatureHtmlTable(settings)]
-			}
-		});
+	// The table - always the center of attention
+	renderer(settings, insert, {
+		full: {
+			table: true,
+			contents: [_fnFeatureHtmlTable(settings)]
+		}
+	});
 
-		// Everything below
-		bottom.forEach(function (item) {
-			renderer(settings, insert, item);
-		});
-	}
+	// Everything below
+	bottom.forEach(function (item) {
+		renderer(settings, insert, item);
+	});
 }
 
 /**
@@ -8251,12 +8244,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Legacy DOM layout option
-	 */
-	"sDom": null,
-
-
-	/**
 	 * DataTables features six different built-in options for the buttons to
 	 * display for pagination control:
 	 *
@@ -8887,14 +8874,6 @@ DataTable.models.oSettings = {
 	 * 'nTr' and 'nParent'
 	 */
 	"aoOpenRows": [],
-
-	/**
-	 * Dictate the positioning of DataTables' control elements - see
-	 * {@link DataTable.model.oInit.sDom}.
-	 * Note that this parameter will be set by the initialisation routine. To
-	 * set a default use {@link DataTable.defaults}.
-	 */
-	"sDom": null,
 
 	/**
 	 * Which type of pagination should be used.
