@@ -134,15 +134,6 @@ var DataTable = function (selector, options) {
 		// Backwards compatibility, before we apply all the defaults
 		_fnCompatOpts(oInit);
 
-		// If the length menu is given, but the init display length is not, use the length menu
-		if (oInit.aLengthMenu && !oInit.iDisplayLength) {
-			oInit.iDisplayLength = Array.isArray(oInit.aLengthMenu[0])
-				? oInit.aLengthMenu[0][0]
-				: $.isPlainObject(oInit.aLengthMenu[0])
-					? oInit.aLengthMenu[0].value
-					: oInit.aLengthMenu[0];
-		}
-
 		// Apply the defaults and init options to make a single init object will all
 		// options defined from defaults and instance options.
 		oInit = _fnExtend($.extend(true, {}, defaults), oInit);
@@ -165,8 +156,9 @@ var DataTable = function (selector, options) {
 			"layout",
 			"typeDetect",
 			["oSearch", "oPreviousSearch"],
-			["iDisplayLength", "_iDisplayLength"]
 		]);
+
+		oSettings._iDisplayLength = oSettings.aLengthMenu[0];
 
 		oSettings.rowIdFn = _fnGetObjectDataFn(oInit.rowId);
 
@@ -1601,7 +1593,6 @@ function _fnCompatOpts(init) {
 	_fnCompatMap(init, 'ordering', 'bSort');
 	_fnCompatMap(init, 'order', 'aaSorting');
 	_fnCompatMap(init, 'paging', 'bPaginate');
-	_fnCompatMap(init, 'pageLength', 'iDisplayLength');
 	_fnCompatMap(init, 'searching', 'bFilter');
 }
 
@@ -6897,14 +6888,6 @@ DataTable.defaults = {
 			this.oLanguage.sThousands
 		);
 	},
-
-
-	/**
-	 * Number of rows to display on a single page when using pagination. If
-	 * feature enabled (`lengthChange`) then the end user will be able to override
-	 * this to a custom setting using a pop-up menu.
-	 */
-	"iDisplayLength": 10,
 
 
 	/**
