@@ -192,7 +192,7 @@ var DataTable = function (selector, options) {
 
 		// Apply the column definitions
 		_fnApplyColumnDefs(oSettings, columnsInit, function (iCol, oDef) {
-			_fnColumnOptions(oSettings, iCol, oDef);
+			_fnColumnOptions(oSettings, iCol);
 		});
 
 		/* HTML5 attribute detection - build an mData object automatically if the
@@ -1709,51 +1709,8 @@ function _fnAddColumn(oSettings) {
  *  @param {object} oOptions object with sType, bVisible and bSearchable etc
  *  @memberof DataTable#oApi
  */
-function _fnColumnOptions(oSettings, iCol, oOptions) {
+function _fnColumnOptions(oSettings, iCol) {
 	var oCol = oSettings.aoColumns[iCol];
-
-	/* User specified column options */
-	if (oOptions !== undefined && oOptions !== null) {
-		// Backwards compatibility
-		_fnCompatCols(oOptions);
-
-		// Map camel case parameters to their Hungarian counterparts
-		_fnCamelToHungarian(DataTable.defaults.column, oOptions, true);
-
-		/* Backwards compatibility for mDataProp */
-		if (oOptions.mDataProp !== undefined && !oOptions.mData) {
-			oOptions.mData = oOptions.mDataProp;
-		}
-
-		if (oOptions.sType) {
-			oCol._sManualType = oOptions.sType;
-		}
-
-		// `class` is a reserved word in Javascript, so we need to provide
-		// the ability to use a valid name for the camel case input
-		if (oOptions.className && !oOptions.sClass) {
-			oOptions.sClass = oOptions.className;
-		}
-
-		var origClass = oCol.sClass;
-
-		$.extend(oCol, oOptions);
-		_fnMap(oCol, oOptions, "sWidth", "sWidthOrig");
-
-		// Merge class from previously defined classes with this one, rather than just
-		// overwriting it in the extend above
-		if (origClass !== oCol.sClass) {
-			oCol.sClass = origClass + ' ' + oCol.sClass;
-		}
-
-		/* iDataSort to be applied (backwards compatibility), but aDataSort will take
-		 * priority if defined
-		 */
-		if (oOptions.iDataSort !== undefined) {
-			oCol.aDataSort = [oOptions.iDataSort];
-		}
-		_fnMap(oCol, oOptions, "aDataSort");
-	}
 
 	/* Cache the data get and set functions for speed */
 	var mDataSrc = oCol.mData;
@@ -3288,7 +3245,7 @@ function _fnDetectHeader(settings, thead, write) {
 	var columns = settings.aoColumns;
 	var rows = $(thead).children('tr');
 	var row, cell;
-	var i, k, l, iLen, shifted, column, colspan, rowspan;
+	var k, l, shifted, column, colspan, rowspan;
 	var isHeader = thead && thead.nodeName.toLowerCase() === 'thead';
 	var layout = [];
 	var unique;
@@ -3301,11 +3258,11 @@ function _fnDetectHeader(settings, thead, write) {
 	};
 
 	// We know how many rows there are in the layout - so prep it
-	for (i = 0, iLen = rows.length; i < iLen; i++) {
+	for (let i = 0; i < rows.length; i++) {
 		layout.push([]);
 	}
 
-	for (i = 0, iLen = rows.length; i < iLen; i++) {
+	for (let i = 0; i < rows.length; i++) {
 		row = rows[i];
 		column = 0;
 
@@ -3329,15 +3286,13 @@ function _fnDetectHeader(settings, thead, write) {
 				shifted = shift(layout, i, column);
 
 				// Cache calculation for unique columns
-				unique = colspan === 1 ?
-					true :
-					false;
+				unique = colspan === 1;
 
 				// Perform header setup
 				if (write) {
 					if (unique) {
 						// Allow column options to be set from HTML attributes
-						_fnColumnOptions(settings, shifted, $(cell).data());
+						_fnColumnOptions(settings, shifted);
 
 						// Get the width for the column. This can be defined from the
 						// width attribute, style attribute or `columns.width` option
