@@ -3621,7 +3621,6 @@ function _fnFilterData(settings) {
 // #endregion
 // #region core.init.js
 
-
 /**
  * Draw the table for the first time, adding all required features
  *  @param {object} settings dataTables settings object
@@ -3717,7 +3716,7 @@ function _fnLengthChange(settings, val) {
  *  @returns {bool} true page has changed, false - no change
  *  @memberof DataTable#oApi
  */
-function _fnPageChange(settings, action, redraw) {
+function _fnPageChange(settings, action) {
 	var
 		start = settings._iDisplayStart,
 		len = settings._iDisplayLength,
@@ -3765,7 +3764,7 @@ function _fnPageChange(settings, action, redraw) {
 
 	_fnCallbackFire(settings, null, changed ? 'page' : 'page-nc', [settings]);
 
-	if (changed && redraw) {
+	if (changed) {
 		_fnDraw(settings);
 	}
 
@@ -9084,7 +9083,7 @@ function _pagingDraw(settings, host, opts) {
 			btn.clicker, { action: button }, function (e) {
 				e.preventDefault();
 
-				_fnPageChange(settings, e.data.action, true);
+				_fnPageChange(settings, e.data.action);
 			}
 		);
 
