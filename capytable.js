@@ -190,14 +190,10 @@ var DataTable = function (selector, options) {
 		$.extend(oClasses, DataTable.ext.classes, oInit.oClasses);
 		$this.addClass(oClasses.table);
 
-		if (!oSettings.oFeatures.bPaginate) {
-			oInit.iDisplayStart = 0;
-		}
-
 		if (oSettings.iInitDisplayStart === undefined) {
 			/* Display start point, taking into account the save saving */
-			oSettings.iInitDisplayStart = oInit.iDisplayStart;
-			oSettings._iDisplayStart = oInit.iDisplayStart;
+			oSettings.iInitDisplayStart = 0;
+			oSettings._iDisplayStart = 0;
 		}
 
 		/*
@@ -8020,15 +8016,6 @@ DataTable.defaults = {
 	 * this to a custom setting using a pop-up menu.
 	 */
 	"iDisplayLength": 10,
-
-
-	/**
-	 * Define the starting point for data display when using DataTables with
-	 * pagination. Note that this parameter is the number of records, rather than
-	 * the page number, so if you have 10 records per page and want to start on
-	 * the third page, it should be "20".
-	 */
-	"iDisplayStart": 0,
 
 
 	/**
