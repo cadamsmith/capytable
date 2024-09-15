@@ -2911,11 +2911,31 @@ function _fnDraw(oSettings) {
 	}
 
 	/* Header and footer callbacks */
-	_fnCallbackFire(oSettings, 'aoHeaderCallback', 'header', [$(oSettings.nTHead).children('tr')[0],
-	_fnGetDataMaster(oSettings), iDisplayStart, iDisplayEnd, aiDisplay]);
+	_fnCallbackFire(
+		oSettings,
+		'aoHeaderCallback',
+		'header',
+		[
+			$(oSettings.nTHead).children('tr')[0],
+			_fnGetDataMaster(oSettings),
+			iDisplayStart,
+			iDisplayEnd,
+			aiDisplay
+		]
+	);
 
-	_fnCallbackFire(oSettings, 'aoFooterCallback', 'footer', [$(oSettings.nTFoot).children('tr')[0],
-	_fnGetDataMaster(oSettings), iDisplayStart, iDisplayEnd, aiDisplay]);
+	_fnCallbackFire(
+		oSettings,
+		'aoFooterCallback',
+		'footer',
+		[
+			$(oSettings.nTFoot).children('tr')[0],
+			_fnGetDataMaster(oSettings),
+			iDisplayStart,
+			iDisplayEnd,
+			aiDisplay
+		]
+	);
 
 	// replaceChildren is faster, but only became widespread in 2020,
 	// so a fall back in jQuery is provided for older browsers.
