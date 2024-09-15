@@ -5477,35 +5477,15 @@ _Api.registerPlural = _api_registerPlural = function (pluralName, singularName, 
 
 // #region api.draw.js
 
-
-/**
- * Redraw the tables in the current context.
- */
-_api_register('draw()', function (paging) {
-	return this.iterator('table', function (settings) {
-		if (paging === 'page') {
-			_fnDraw(settings);
-		}
-		else {
-			if (typeof paging === 'string') {
-				paging = paging === 'full-hold' ?
-					false :
-					true;
-			}
-
-			_fnReDraw(settings, paging === false);
-		}
-	});
-});
-
 // #endregion
+
 // #region api.page.js
 // #endregion
+
 // #region api.ajax.js
 // #endregion
+
 // #region api.selectors.js
-
-
 
 var _selector_run = function (type, selector, selectFn, settings, opts) {
 	var
@@ -5674,10 +5654,13 @@ var _selector_row_indexes = function (settings, opts) {
 };
 
 // #endregion
+
 // #region api.rows.js
 // #endregion
+
 // #region api.row.details.js
 // #endregion
+
 // #region api.columns.js
 
 
@@ -6097,10 +6080,11 @@ _api_register('column()', function (selector, opts) {
 });
 
 // #endregion
+
 // #region api.cells.js
 // #endregion
-// #region api.order.js
 
+// #region api.order.js
 
 /**
  * Get current ordering (sorting) that has been applied to the table.
@@ -6233,12 +6217,16 @@ _api_registerPlural('columns().orderable()', 'column().orderable()', function (d
 });
 
 // #endregion
+
 // #region api.processing.js
 // #endregion
+
 // #region api.search.js
 // #endregion
+
 // #region api.state.js
 // #endregion
+
 // #region api.static.js
 
 /**
@@ -6457,8 +6445,8 @@ DataTable.tables = function (visible) {
 DataTable.camelToHungarian = _fnCamelToHungarian;
 
 // #endregion
-// #region api.core.js
 
+// #region api.core.js
 
 /**
  *
