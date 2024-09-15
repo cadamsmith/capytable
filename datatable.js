@@ -151,7 +151,6 @@ var DataTable = function (selector, options) {
 			"fnFormatNumber",
 			"aaSorting",
 			"aLengthMenu",
-			"renderer",
 			"rowId",
 			"layout",
 			"typeDetect",
@@ -2714,9 +2713,7 @@ function _fnBuildHead(settings, side) {
 	// Every cell needs to be passed through the renderer
 	$(target).children('tr').children('th, td')
 		.each(function () {
-			_fnRenderer(settings, side)(
-				settings, $(this), classes
-			);
+			_fnRenderer(side)(settings, $(this), classes);
 		});
 }
 
@@ -3244,7 +3241,7 @@ function _fnAddOptionsHtml(settings) {
 
 	var top = _layoutArray(settings, settings.layout, 'top');
 	var bottom = _layoutArray(settings, settings.layout, 'bottom');
-	var renderer = _fnRenderer(settings, 'layout');
+	var renderer = _fnRenderer('layout');
 
 	// Everything above - the renderer will actually insert the contents into the document
 	top.forEach(function (item) {
@@ -4748,21 +4745,9 @@ function _fnLengthOverflow(settings) {
 }
 
 
-function _fnRenderer(settings, type) {
-	var renderer = settings.renderer;
+function _fnRenderer(type) {
 	var host = DataTable.ext.renderer[type];
-
-	if ($.isPlainObject(renderer) && renderer[type]) {
-		// Specific renderer for this type. If available use it, otherwise use
-		// the default.
-		return host[renderer[type]] || host._;
-	}
-	else if (typeof renderer === 'string') {
-		// Common renderer - if there is one available for this type use it,
-		// otherwise use the default
-		return host[renderer] || host._;
-	}
-
+	
 	// Use the default
 	return host._;
 }
@@ -7070,19 +7055,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * DataTables makes use of renderers when displaying HTML elements for
-	 * a table. These renderers can be added or modified by plug-ins to
-	 * generate suitable mark-up for a site. For example the Bootstrap
-	 * integration plug-in for DataTables uses a paging button renderer to
-	 * display pagination buttons in the mark-up required by Bootstrap.
-	 *
-	 * For further information about the renderers available see
-	 * DataTable.ext.renderer
-	 */
-	"renderer": null,
-
-
-	/**
 	 * Set the data property name that DataTables should use to get a row's id
 	 * to set as the `id` property in the node.
 	 */
@@ -9069,7 +9041,7 @@ function _pagingDraw(settings, host, opts) {
 		var button = buttons[i];
 
 		var btnInfo = _pagingButtonInfo(settings, button, page, pages);
-		var btn = _fnRenderer(settings, 'pagingButton')(
+		var btn = _fnRenderer('pagingButton')(
 			settings,
 			button,
 			btnInfo.display,
@@ -9110,7 +9082,7 @@ function _pagingDraw(settings, host, opts) {
 		buttonEls.push(btn.display);
 	}
 
-	var wrapped = _fnRenderer(settings, 'pagingContainer')(
+	var wrapped = _fnRenderer('pagingContainer')(
 		settings, buttonEls
 	);
 
