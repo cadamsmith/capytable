@@ -155,7 +155,6 @@ var DataTable = function (selector, options) {
 			"bFilter",
 			"bSort",
 			"bInfo",
-			"bAutoWidth",
 		]);
 		_fnMap(oSettings, oInit, [
 			"fnFormatNumber",
@@ -4485,11 +4484,6 @@ function _fnScrollDraw(settings) {
  *  @memberof DataTable#oApi
  */
 function _fnCalculateColumnWidths(settings) {
-	// Not interested in doing column width calculation if auto-width is disabled
-	if (!settings.oFeatures.bAutoWidth) {
-		return;
-	}
-
 	var
 		table = settings.nTable,
 		columns = settings.aoColumns,
@@ -7855,14 +7849,6 @@ DataTable.defaults = {
 
 
 	/**
-	 * Enable or disable automatic column width calculation. This can be disabled
-	 * as an optimisation (it takes some time to calculate the widths) if the
-	 * tables widths are passed in using `columns`.
-	 */
-	"bAutoWidth": true,
-
-
-	/**
 	 * Enable or disable filtering of data. Filtering in DataTables is "smart" in
 	 * that it allows the end user to input multiple words (space separated) and
 	 * will match a row containing those words, even if not in the order that was
@@ -8468,14 +8454,6 @@ DataTable.models.oSettings = {
 	 * Primary features of DataTables and their enablement state.
 	 */
 	"oFeatures": {
-
-		/**
-		 * Flag to say if DataTables should automatically try to calculate the
-		 * optimum table and columns widths (true) or not (false).
-		 * Note that this parameter will be set by the initialisation routine. To
-		 * set a default use {@link DataTable.defaults}.
-		 */
-		"bAutoWidth": null,
 
 		/**
 		 * Enable filtering on the table or not. Note that if this is disabled
