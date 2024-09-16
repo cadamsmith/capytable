@@ -66,8 +66,6 @@ var DataTable = function (selector, options) {
 		/* Setting up the initialisation object */
 		_fnCamelToHungarian(defaults, $.extend(oInit, $this.data()), true);
 
-
-
 		/* Check to see if we are re-initialising a table */
 		var allSettings = DataTable.settings;
 		for (i = 0, iLen = allSettings.length; i < iLen; i++) {
@@ -105,7 +103,6 @@ var DataTable = function (selector, options) {
 
 		/* Create the settings object for this table and set some of the default parameters */
 		var oSettings = $.extend(true, {}, DataTable.models.oSettings, {
-			"sDestroyWidth": $this[0].style.width,
 			"sInstance": sId,
 			"sTableId": sId,
 			colgroup: $('<colgroup>').prependTo(this),
@@ -914,11 +911,7 @@ var _isHtml = function (d) {
 };
 
 // Is a string a number surrounded by HTML?
-var _htmlNumeric = function (d, formatted, allowEmpty) {
-	if (allowEmpty && _empty(d)) {
-		return true;
-	}
-
+var _htmlNumeric = function (d) {
 	// input and select strings mean that this isn't just a number
 	if (typeof d === 'string' && d.match(/<(input|select)/i)) {
 		return null;
@@ -927,11 +920,10 @@ var _htmlNumeric = function (d, formatted, allowEmpty) {
 	var html = _isHtml(d);
 	return !html ?
 		null :
-		_isNumber(_stripHtml(d), formatted, allowEmpty) ?
+		_isNumber(_stripHtml(d), true, false) ?
 			true :
 			null;
 };
-
 
 var _pluck = function (a, prop, prop2) {
 	var out = [];
@@ -5210,11 +5202,9 @@ var __columnData = function (settings, column, rows) {
 };
 
 
-var __column_header = function (settings, column, row) {
+var __column_header = function (settings, column) {
 	var header = settings.aoHeader;
-	var target = row !== undefined
-		? row
-		: header.length - 1;
+	var target = header.length - 1;
 
 	return header[target][column].cell;
 };
@@ -5341,7 +5331,6 @@ var __column_selector = function (settings, selector, opts) {
 	return _selector_run(selector, run, settings, opts);
 };
 
-
 _api_register('columns()', function (selector, opts) {
 	// argument shifting
 	if (selector === undefined) {
@@ -5365,41 +5354,12 @@ _api_register('columns()', function (selector, opts) {
 	return inst;
 });
 
-_api_registerPlural('columns().header()', 'column().header()', function (row) {
-	return this.iterator('column', function (settings, column) {
-		return __column_header(settings, column, row);
-	}, 1);
-});
-
 _api_registerPlural('columns().indexes()', 'column().index()', function (type) {
 	return this.iterator('column', function (settings, column) {
 		return type === 'visible' ?
 			_fnColumnIndexToVisible(settings, column) :
 			column;
 	}, 1);
-});
-
-_api_register('columns.adjust()', function () {
-	return this.iterator('table', function (settings) {
-		_fnAdjustColumnSizing(settings);
-	}, 1);
-});
-
-_api_register('column.index()', function (type, idx) {
-	if (this.context.length !== 0) {
-		var ctx = this.context[0];
-
-		if (type === 'fromVisible' || type === 'toData') {
-			return _fnVisibleToColumnIndex(ctx, idx);
-		}
-		else if (type === 'fromData' || type === 'toVisible') {
-			return _fnColumnIndexToVisible(ctx, idx);
-		}
-	}
-});
-
-_api_register('column()', function (selector, opts) {
-	return _selector_first(this.columns(selector, opts));
 });
 
 // #endregion
@@ -5541,97 +5501,6 @@ _api_register('ready()', function (fn) {
 			this.on('init', function () {
 				fn.call(this);
 			});
-		}
-	});
-});
-
-
-_api_register('destroy()', function (remove) {
-	remove = remove || false;
-
-	return this.iterator('table', function (settings) {
-		var classes = settings.oClasses;
-		var table = settings.nTable;
-		var tbody = settings.nTBody;
-		var thead = settings.nTHead;
-		var tfoot = settings.nTFoot;
-		var jqTable = $(table);
-		var jqTbody = $(tbody);
-		var jqWrapper = $(settings.nTableWrapper);
-		var rows = settings.aoData.map(function (r) { return r ? r.nTr : null; });
-		var orderClasses = classes.order;
-
-		// Flag to note that the table is currently being destroyed - no action
-		// should be taken
-		settings.bDestroying = true;
-
-		// Fire off the destroy callbacks for plug-ins etc
-		_fnCallbackFire(settings, "aoDestroyCallback", "destroy", [settings], true);
-
-		// If not being removed from the document, make all columns visible
-		if (!remove) {
-			new _Api(settings).columns().visible(true);
-		}
-
-		// Blitz all `DT` namespaced events (these are internal events, the
-		// lowercase, `dt` events are user subscribed and they are responsible
-		// for removing them
-		jqWrapper.off('.DT').find(':not(tbody *)').off('.DT');
-		$(window).off('.DT-' + settings.sInstance);
-
-		// When scrolling we had to break the table up - restore it
-		if (table != thead.parentNode) {
-			jqTable.children('thead').detach();
-			jqTable.append(thead);
-		}
-
-		if (tfoot && table != tfoot.parentNode) {
-			jqTable.children('tfoot').detach();
-			jqTable.append(tfoot);
-		}
-
-		settings.colgroup.remove();
-
-		settings.aaSorting = [];
-		_fnSortingClasses(settings);
-
-		$('th, td', thead)
-			.removeClass(
-				orderClasses.canAsc + ' ' +
-				orderClasses.canDesc + ' ' +
-				orderClasses.isAsc + ' ' +
-				orderClasses.isDesc
-			)
-			.css('width', '');
-
-		// Add the TR elements back into the table in their original order
-		jqTbody.children().detach();
-		jqTbody.append(rows);
-
-		var orig = settings.nTableWrapper.parentNode;
-		var insertBefore = settings.nTableWrapper.nextSibling;
-
-		// Remove the DataTables generated nodes, events and classes
-		var removedMethod = remove ? 'remove' : 'detach';
-		jqTable[removedMethod]();
-		jqWrapper[removedMethod]();
-
-		// If we need to reattach the table to the document
-		if (!remove && orig) {
-			// insertBefore acts like appendChild if !arg[1]
-			orig.insertBefore(table, insertBefore);
-
-			// Restore the width of the original table - was read from the style property,
-			// so we can restore directly to that
-			jqTable
-				.css('width', settings.sDestroyWidth)
-				.removeClass(classes.table);
-		}
-
-		/* Remove the settings object from the settings array */
-		var idx = DataTable.settings.indexOf(settings);
-		if (idx !== -1) {
-			DataTable.settings.splice(idx, 1);
 		}
 	});
 });
@@ -6416,21 +6285,6 @@ DataTable.models.oSettings = {
 	"oBrowser": {
 	},
 
-
-	/**
-	 * Array referencing the nodes which are used for the features. The
-	 * parameters of this object match what is allowed by sDom - i.e.
-	 *   <ul>
-	 *     <li>'l' - Length changing</li>
-	 *     <li>'f' - Filtering input</li>
-	 *     <li>'t' - The table!</li>
-	 *     <li>'i' - Information</li>
-	 *     <li>'p' - Pagination</li>
-	 *     <li>'r' - pRocessing</li>
-	 *   </ul>
-	 */
-	"aanFeatures": [],
-
 	/**
 	 * Store data information - see {@link DataTable.models.oRow} for detailed
 	 * information.
@@ -6486,11 +6340,6 @@ DataTable.models.oSettings = {
 	 * set a default use {@link DataTable.defaults}.
 	 */
 	"aaSorting": null,
-
-	/**
-	 * If restoring a table - we should restore its width
-	 */
-	"sDestroyWidth": 0,
 
 	/**
 	 * Callback functions array for every time a row is inserted (i.e. on a draw).
@@ -6568,11 +6417,6 @@ DataTable.models.oSettings = {
 	 * 'nTr' and 'nParent'
 	 */
 	"aoOpenRows": [],
-
-	/**
-	 * Number of paging controls on the page. Only used for backwards compatibility
-	 */
-	pagingControls: 0,
 
 	/**
 	 * List of options that can be used for the user selectable length menu.
@@ -7037,36 +6881,16 @@ DataTable.type('html-num-fmt', {
 	className: 'dt-type-numeric',
 	detect: {
 		allOf: function (d) {
-			return _htmlNumeric(d, true, false);
+			return _htmlNumeric(d);
 		},
 		oneOf: function (d) {
 			// At least one data point must contain a numeric value
-			return _htmlNumeric(d, true, false);
+			return _htmlNumeric(d);
 		}
 	},
 	order: {
 		pre: function (d) {
 			return __numericReplace(d, _re_html, _re_formatted_numeric);
-		}
-	},
-	search: _filterString(true)
-});
-
-
-DataTable.type('html-num', {
-	className: 'dt-type-numeric',
-	detect: {
-		allOf: function (d, settings) {
-			return _htmlNumeric(d, false, true);
-		},
-		oneOf: function (d, settings) {
-			// At least one data point must contain a numeric value
-			return _htmlNumeric(d, false, false);
-		}
-	},
-	order: {
-		pre: function (d) {
-			return __numericReplace(d, _re_html);
 		}
 	},
 	search: _filterString(true)
