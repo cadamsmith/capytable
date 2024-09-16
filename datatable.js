@@ -1618,7 +1618,7 @@ function _fnColumnSizes(settings) {
  *  @memberof DataTable#oApi
  */
 function _fnVisibleToColumnIndex(oSettings, iMatch) {
-	var aiVis = _fnGetColumns(oSettings, 'bVisible');
+	var aiVis = oSettings.aoColumns.map((_, i) => i);
 
 	return typeof aiVis[iMatch] === 'number' ?
 		aiVis[iMatch] :
@@ -1635,7 +1635,7 @@ function _fnVisibleToColumnIndex(oSettings, iMatch) {
  *  @memberof DataTable#oApi
  */
 function _fnColumnIndexToVisible(oSettings, iMatch) {
-	var aiVis = _fnGetColumns(oSettings, 'bVisible');
+	var aiVis = oSettings.aoColumns.map((_, i) => i);
 	var iPos = aiVis.indexOf(iMatch);
 
 	return iPos !== -1 ? iPos : null;
@@ -1650,39 +1650,17 @@ function _fnColumnIndexToVisible(oSettings, iMatch) {
  */
 function _fnVisbleColumns(settings) {
 	var layout = settings.aoHeader;
-	var columns = settings.aoColumns;
 	var vis = 0;
 
 	if (layout.length) {
 		for (var i = 0, ien = layout[0].length; i < ien; i++) {
-			if (columns[i].bVisible && $(layout[0][i].cell).css('display') !== 'none') {
+			if ($(layout[0][i].cell).css('display') !== 'none') {
 				vis++;
 			}
 		}
 	}
 
 	return vis;
-}
-
-
-/**
- * Get an array of column indexes that match a given property
- *  @param {object} oSettings dataTables settings object
- *  @param {string} sParam Parameter in aoColumns to look for - typically
- *    bVisible or bSearchable
- *  @returns {array} Array of indexes with matched properties
- *  @memberof DataTable#oApi
- */
-function _fnGetColumns(oSettings, sParam) {
-	var a = [];
-
-	oSettings.aoColumns.map(function (val, i) {
-		if (val[sParam]) {
-			a.push(i);
-		}
-	});
-
-	return a;
 }
 
 /**
@@ -1908,10 +1886,6 @@ function _fnColumnsSumWidth(settings, targets, original) {
 		var definedWidth = original ?
 			column.sWidthOrig :
 			column.sWidth;
-
-		if (column.bVisible === false) {
-			continue;
-		}
 
 		if (definedWidth === null || definedWidth === undefined) {
 			return null; // can't determine a defined width - browser defined
@@ -2325,14 +2299,7 @@ function _fnCreateTr(oSettings, iRow, nTr, anTds) {
 
 		// column class
 		_addClass(nTd, oCol.sClass);
-
-		// Visibility - add or remove as required
-		if (!oCol.bVisible) {
-			nTd.parentNode.removeChild(nTd);
-		}
 	}
-
-	_fnCallbackFire(oSettings, 'aoRowCreatedCallback', 'row-created', [nTr, rowData, iRow, cells]);
 }
 
 
@@ -2459,10 +2426,7 @@ function _fnHeaderLayout(settings, source) {
 	}
 
 	// Default is to work on only visible columns
-	var incColumns = _range(columnCount)
-		.filter(function (idx) {
-			return columns[idx].bVisible;
-		});
+	var incColumns = _range(columnCount);
 
 	// Make a copy of the master layout array, but with only the columns we want
 	for (let row = 0; row < source.length; row++) {
@@ -2571,11 +2535,6 @@ function _fnDraw(oSettings) {
 	_fnStart(oSettings);
 
 	/* Provide a pre-callback function which can be used to cancel the draw is false is returned */
-	var aPreDraw = _fnCallbackFire(oSettings, 'aoPreDrawCallback', 'preDraw', [oSettings]);
-	if (aPreDraw.indexOf(false) !== -1) {
-		_fnProcessingDisplay(oSettings, false);
-		return;
-	}
 
 	var anRows = [];
 	var iRowCount = 0;
@@ -2608,12 +2567,6 @@ function _fnDraw(oSettings) {
 				_addClass(td, _ext.type.className[col.sType]); // auto class
 			}
 
-			// Row callback functions - might want to manipulate the row
-			// iRowCount and j are not currently documented. Are they at all
-			// useful?
-			_fnCallbackFire(oSettings, 'aoRowCallback', null,
-				[nRow, aoData._aData, iRowCount, j, iDataIndex]);
-
 			anRows.push(nRow);
 			iRowCount++;
 		}
@@ -2621,33 +2574,6 @@ function _fnDraw(oSettings) {
 	else {
 		anRows[0] = _emptyRow(oSettings);
 	}
-
-	/* Header and footer callbacks */
-	_fnCallbackFire(
-		oSettings,
-		'aoHeaderCallback',
-		'header',
-		[
-			$(oSettings.nTHead).children('tr')[0],
-			_fnGetDataMaster(oSettings),
-			iDisplayStart,
-			iDisplayEnd,
-			aiDisplay
-		]
-	);
-
-	_fnCallbackFire(
-		oSettings,
-		'aoFooterCallback',
-		'footer',
-		[
-			$(oSettings.nTFoot).children('tr')[0],
-			_fnGetDataMaster(oSettings),
-			iDisplayStart,
-			iDisplayEnd,
-			aiDisplay
-		]
-	);
 
 	// replaceChildren is faster, but only became widespread in 2020,
 	// so a fall back in jQuery is provided for older browsers.
@@ -3414,16 +3340,11 @@ function _fnInitComplete(settings) {
 		return;
 	}
 
-	var args = [settings, undefined];
-
 	settings._bInitComplete = true;
 
 	// Table is fully set up and we have data, so calculate the
 	// column widths
 	_fnAdjustColumnSizing(settings);
-
-	_fnCallbackFire(settings, null, 'plugin-init', args, true);
-	_fnCallbackFire(settings, 'aoInitComplete', 'init', args, true);
 }
 
 // #endregion
@@ -3560,7 +3481,7 @@ function _fnCalculateColumnWidths(settings) {
 	var
 		table = settings.nTable,
 		columns = settings.aoColumns,
-		visibleColumns = _fnGetColumns(settings, 'bVisible'),
+		visibleColumns = _range(columns.length),
 		tableWidthAttr = table.getAttribute('width'), // from DOM element
 		tableContainer = table.parentNode,
 		column, columnIdx;
@@ -3578,16 +3499,6 @@ function _fnCalculateColumnWidths(settings) {
 	if (styleWidth && styleWidth.indexOf('%') !== -1) {
 		tableWidthAttr = styleWidth;
 	}
-
-	// Let plug-ins know that we are doing a recalc, in case they have changed any of the
-	// visible columns their own way (e.g. Responsive uses display:none).
-	_fnCallbackFire(
-		settings,
-		null,
-		'column-calc',
-		{ visible: visibleColumns },
-		false
-	);
 
 	// Construct a single row, worst case, table with the widest
 	// node in the data, assign any user defined widths, then insert it into
@@ -3791,9 +3702,7 @@ function _colGroup(settings) {
 	settings.colgroup.empty();
 
 	for (i = 0; i < cols.length; i++) {
-		if (cols[i].bVisible) {
-			settings.colgroup.append(cols[i].colEl);
-		}
+		settings.colgroup.append(cols[i].colEl);
 	}
 }
 // #endregion
@@ -5262,9 +5171,7 @@ var __column_selector = function (settings, selector, opts) {
 						// Visible index given, convert to column index
 						if (idx < 0) {
 							// Counting from the right
-							var visColumns = columns.map(function (col, i) {
-								return col.bVisible ? i : null;
-							});
+							var visColumns = _range(columns.length);
 							return [visColumns[visColumns.length + idx]];
 						}
 						// Counting from the left
@@ -5272,11 +5179,6 @@ var __column_selector = function (settings, selector, opts) {
 					}
 
 					return columns.map(function (col, idx) {
-						// Not visible, can't match
-						if (!col.bVisible) {
-							return null;
-						}
-
 						// Selector
 						if (match[1]) {
 							return $(nodes[idx]).filter(match[1]).length > 0 ? idx : null;
@@ -5423,32 +5325,6 @@ _api_register('$()', function (selector, opts) {
 });
 
 
-// jQuery functions to operate on the tables
-$.each(['on', 'one', 'off'], function (i, key) {
-	_api_register(key + '()', function ( /* event, handler */) {
-		var args = Array.prototype.slice.call(arguments);
-
-		// Add the `dt` namespace automatically if it isn't already present
-		args[0] = args[0].split(/\s/).map(function (e) {
-			return !e.match(/\.dt\b/) ?
-				e + '.dt' :
-				e;
-		}).join(' ');
-
-		var inst = $(this.tables().nodes());
-		inst[key].apply(inst, args);
-		return this;
-	});
-});
-
-
-_api_register('clear()', function () {
-	return this.iterator('table', function (settings) {
-		_fnClearTable(settings);
-	});
-});
-
-
 _api_register('error()', function (msg) {
 	return this.iterator('table', function (settings) {
 		_fnLog(settings, 0, msg);
@@ -5456,83 +5332,9 @@ _api_register('error()', function (msg) {
 });
 
 
-_api_register('settings()', function () {
-	return new _Api(this.context, this.context);
-});
-
-
-_api_register('init()', function () {
-	var ctx = this.context;
-	return ctx.length ? ctx[0].oInit : null;
-});
-
-
-_api_register('data()', function () {
-	return this.iterator('table', function (settings) {
-		return _pluck(settings.aoData, '_aData');
-	}).flatten();
-});
-
-
-_api_register('trigger()', function (name, args, bubbles) {
-	return this.iterator('table', function (settings) {
-		return _fnCallbackFire(settings, null, name, args, bubbles);
-	}).flatten();
-});
-
-
-_api_register('ready()', function (fn) {
-	var ctx = this.context;
-
-	// Get status of first table
-	if (!fn) {
-		return ctx.length
-			? (ctx[0]._bInitComplete || false)
-			: null;
-	}
-
-	// Function to run either once the table becomes ready or
-	// immediately if it is already ready.
-	return this.tables().every(function () {
-		if (this.context[0]._bInitComplete) {
-			fn.call(this);
-		}
-		else {
-			this.on('init', function () {
-				fn.call(this);
-			});
-		}
-	});
-});
-
-
-// Add the `every()` method for rows, columns and cells in a compact form
-$.each(['column', 'row', 'cell'], function (i, type) {
-	_api_register(type + 's().every()', function (fn) {
-		var opts = this.selector.opts;
-		var api = this;
-		var inst;
-		var counter = 0;
-
-		return this.iterator('every', function (settings, selectedIdx, tableIdx) {
-			inst = api[type](selectedIdx, opts);
-
-			if (type === 'cell') {
-				fn.call(inst, inst[0][0].row, inst[0][0].column, tableIdx, counter);
-			}
-			else {
-				fn.call(inst, selectedIdx, tableIdx, counter);
-			}
-
-			counter++;
-		});
-	});
-});
-
-
 // i18n method for extensions to be able to use the language object from the
 // DataTable
-_api_register('i18n()', function (token, def, plural) {
+_api_register('i18n()', function (token, def) {
 	var ctx = this.context[0];
 	var resolved = _fnGetObjectDataFn(token)(ctx.oLanguage);
 
@@ -5541,13 +5343,11 @@ _api_register('i18n()', function (token, def, plural) {
 	}
 
 	if ($.isPlainObject(resolved)) {
-		resolved = plural !== undefined && resolved[plural] !== undefined ?
-			resolved[plural] :
-			resolved._;
+		resolved = resolved._;
 	}
 
 	return typeof resolved === 'string'
-		? resolved.replace('%d', plural) // nb: plural might be undefined,
+		? resolved.replace('%d', undefined) // nb: plural might be undefined,
 		: resolved;
 });
 
@@ -5706,11 +5506,6 @@ DataTable.models.oColumn = {
 	 * Flag to indicate if the column is sortable or not.
 	 */
 	"bSortable": null,
-
-	/**
-	 * Flag to indicate if the column is currently visible in the table or not
-	 */
-	"bVisible": null,
 
 	/**
 	 * Store for manual type assignment using the `column.type` option. This
@@ -6094,12 +5889,6 @@ DataTable.defaults.column = {
 	 */
 	"bSortable": true,
 
-
-	/**
-	 * Enable or disable the display of this column.
-	 */
-	"bVisible": true,
-
 	/**
 	 * This property can be used to read data from any data source property,
 	 * including deeply nested objects / properties. `data` can be given in a
@@ -6342,40 +6131,9 @@ DataTable.models.oSettings = {
 	"aaSorting": null,
 
 	/**
-	 * Callback functions array for every time a row is inserted (i.e. on a draw).
-	 */
-	"aoRowCallback": [],
-
-	/**
-	 * Callback functions for the header on each draw.
-	 */
-	"aoHeaderCallback": [],
-
-	/**
-	 * Callback function for the footer on each draw.
-	 */
-	"aoFooterCallback": [],
-
-	/**
 	 * Array of callback functions for draw callback functions
 	 */
 	"aoDrawCallback": [],
-
-	/**
-	 * Array of callback functions for row created function
-	 */
-	"aoRowCreatedCallback": [],
-
-	/**
-	 * Callback functions for just before the table is redrawn. A return of
-	 * false will be used to cancel the draw.
-	 */
-	"aoPreDrawCallback": [],
-
-	/**
-	 * Callback functions for when the table has been initialised.
-	 */
-	"aoInitComplete": [],
 
 	/**
 	 * Cache the table ID for quick access
@@ -6476,12 +6234,6 @@ DataTable.models.oSettings = {
 	 * Initialisation object that is used for the table
 	 */
 	"oInit": null,
-
-	/**
-	 * Destroy callback functions - for plug-ins to attach themselves to the
-	 * destroy so they can clean up markup and events.
-	 */
-	"aoDestroyCallback": [],
 
 
 	/**
@@ -7052,14 +6804,7 @@ $.extend(true, DataTable.ext.renderer, {
 				// Find the first visible column that has ordering applied to it - it get's
 				// the aria information, as the ARIA spec says that only one column should
 				// be marked with aria-sort
-				var firstVis = -1; // column index
-
-				for (i = 0; i < orderedColumns.length; i++) {
-					if (settings.aoColumns[orderedColumns[i]].bVisible) {
-						firstVis = orderedColumns[i];
-						break;
-					}
-				}
+				var firstVis = orderedColumns[0];
 
 				if (indexes[0] == firstVis) {
 					var firstSort = sorting[0];
