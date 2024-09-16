@@ -1153,9 +1153,9 @@ DataTable.util = {
 	 * @param {integer} freq Call frequency in mS
 	 * @return {function} Wrapped function
 	 */
-	throttle: function (fn, freq) {
+	throttle: function (fn) {
 		var
-			frequency = freq !== undefined ? freq : 200,
+			frequency = 200,
 			last,
 			timer;
 
@@ -1525,14 +1525,7 @@ function _fnCompatOpts(init) {
  */
 function _fnCompatCols(init) {
 	_fnCompatMap(init, 'orderable', 'bSortable');
-	_fnCompatMap(init, 'orderData', 'aDataSort');
 	_fnCompatMap(init, 'orderSequence', 'asSorting');
-
-	// orderData can be given as an integer
-	var dataSort = init.aDataSort;
-	if (typeof dataSort === 'number' && !Array.isArray(dataSort)) {
-		init.aDataSort = [dataSort];
-	}
 }
 
 // #endregion
@@ -1548,7 +1541,6 @@ function _fnAddColumn(oSettings) {
 	var oDefaults = DataTable.defaults.column;
 	var iCol = oSettings.aoColumns.length;
 	var oCol = $.extend({}, DataTable.models.oColumn, oDefaults, {
-		aDataSort: [iCol],
 		mData: iCol,
 		idx: iCol,
 		colEl: $('<col>').attr('data-dt-column', iCol)
@@ -3834,12 +3826,10 @@ function _fnSortInit(settings) {
 }
 
 
-function _fnSortAttachListener(settings, node, selector, column, callback) {
+function _fnSortAttachListener(settings, node, selector) {
 	_fnBindAction(node, selector, function (e) {
 		var run = false;
-		var columns = column === undefined
-			? _fnColumnsFromHeader(e.target)
-			: [column];
+		var columns = _fnColumnsFromHeader(e.target);
 
 		if (columns.length) {
 			for (var i = 0, ien = columns.length; i < ien; i++) {
@@ -3862,10 +3852,6 @@ function _fnSortAttachListener(settings, node, selector, column, callback) {
 					_fnSortDisplay(settings, settings.aiDisplay);
 
 					_fnReDraw(settings, false);
-
-					if (callback) {
-						callback();
-					}
 				});
 			}
 		}
@@ -3917,7 +3903,7 @@ function _fnSortFlatten(settings) {
 		aSort = [],
 		extSort = DataTable.ext.type.order,
 		aoColumns = settings.aoColumns,
-		aDataSort, iCol, sType, srcCol,
+		iCol, sType, srcCol,
 		nestedSort = [];
 
 	if (!settings.oFeatures.bSort) {
@@ -3933,27 +3919,23 @@ function _fnSortFlatten(settings) {
 		srcCol = nestedSort[i][0];
 
 		if (aoColumns[srcCol]) {
-			aDataSort = aoColumns[srcCol].aDataSort;
+			iCol = aoColumns[srcCol].idx;
+			sType = aoColumns[iCol].sType || 'string';
 
-			for (let k = 0; k < aDataSort.length; k++) {
-				iCol = aDataSort[k];
-				sType = aoColumns[iCol].sType || 'string';
+			if (nestedSort[i]._idx === undefined) {
+				nestedSort[i]._idx = aoColumns[iCol].asSorting.indexOf(nestedSort[i][1]);
+			}
 
-				if (nestedSort[i]._idx === undefined) {
-					nestedSort[i]._idx = aoColumns[iCol].asSorting.indexOf(nestedSort[i][1]);
-				}
-
-				if (nestedSort[i][1]) {
-					aSort.push({
-						src: srcCol,
-						col: iCol,
-						dir: nestedSort[i][1],
-						index: nestedSort[i]._idx,
-						type: sType,
-						formatter: extSort[sType + "-pre"],
-						sorter: extSort[sType + "-" + nestedSort[i][1]]
-					});
-				}
+			if (nestedSort[i][1]) {
+				aSort.push({
+					src: srcCol,
+					col: iCol,
+					dir: nestedSort[i][1],
+					index: nestedSort[i]._idx,
+					type: sType,
+					formatter: extSort[sType + "-pre"],
+					sorter: extSort[sType + "-" + nestedSort[i][1]]
+				});
 			}
 		}
 	}
@@ -5423,78 +5405,6 @@ _api_register('column()', function (selector, opts) {
 // #endregion
 // #region api.order.js
 
-/**
- * Get current ordering (sorting) that has been applied to the table.
- *
- * @returns {array} 2D array containing the sorting information for the first
- *   table in the current context. Each element in the parent array represents
- *   a column being sorted upon (i.e. multi-sorting with two columns would have
- *   2 inner arrays). The inner arrays may have 2 or 3 elements. The first is
- *   the column index that the sorting condition applies to, the second is the
- *   direction of the sort (`desc` or `asc`) and, optionally, the third is the
- *   index of the sorting order from the `column.sorting` initialisation array.
- *//**
-* Set the ordering for the table.
-*
-* @param {integer} order Column index to sort upon.
-* @param {string} direction Direction of the sort to be applied (`asc` or `desc`)
-* @returns {DataTables.Api} this
-*//**
-* Set the ordering for the table.
-*
-* @param {array} order 1D array of sorting information to be applied.
-* @param {array} [...] Optional additional sorting conditions
-* @returns {DataTables.Api} this
-*//**
-* Set the ordering for the table.
-*
-* @param {array} order 2D array of sorting information to be applied.
-* @returns {DataTables.Api} this
-*/
-_api_register('order()', function (order, dir) {
-	var ctx = this.context;
-	var args = Array.prototype.slice.call(arguments);
-
-	if (order === undefined) {
-		// get
-		return ctx.length !== 0 ?
-			ctx[0].aaSorting :
-			undefined;
-	}
-
-	// set
-	if (typeof order === 'number') {
-		// Simple column / direction passed in
-		order = [[order, dir]];
-	}
-	else if (args.length > 1) {
-		// Arguments passed in (list of 1D arrays)
-		order = args;
-	}
-	// otherwise a 2D array was passed in
-
-	return this.iterator('table', function (settings) {
-		settings.aaSorting = Array.isArray(order) ? order.slice() : order;
-	});
-});
-
-
-/**
- * Attach a sort listener to an element for a given column
- *
- * @param {node|jQuery|string} node Identifier for the element(s) to attach the
- *   listener to. This can take the form of a single DOM node, a jQuery
- *   collection of nodes or a jQuery selector which will identify the node(s).
- * @param {integer} column the column that a click on this node will sort on
- * @param {function} [callback] callback function when sort is run
- * @returns {DataTables.Api} this
- */
-_api_register('order.listener()', function (node, column, callback) {
-	return this.iterator('table', function (settings) {
-		_fnSortAttachListener(settings, node, {}, column, callback);
-	});
-});
-
 // Order by the selected column(s)
 _api_register([
 	'columns().order()',
@@ -5909,16 +5819,6 @@ DataTable.models.oColumn = {
 	"idx": null,
 
 	/**
-	 * A list of the columns that sorting should occur on when this column
-	 * is sorted. That this property is an array allows multi-column sorting
-	 * to be defined for a column (for example first name / last name columns
-	 * would benefit from this). The values are integers pointing to the
-	 * columns to be sorted on (typically it will be a single integer pointing
-	 * at itself, but that doesn't need to be the case).
-	 */
-	"aDataSort": null,
-
-	/**
 	 * Define the sorting directions that are applied to the column, in sequence
 	 * as the column is repeatedly sorted upon - i.e. the first value is used
 	 * as the sorting direction when the column if first sorted (clicked on).
@@ -6302,15 +6202,6 @@ _fnHungarianMap(DataTable.defaults);
  *  @namespace
  */
 DataTable.defaults.column = {
-	/**
-	 * Define which column(s) an order will occur on for this column. This
-	 * allows a column's ordering to take multiple columns into account when
-	 * doing a sort or use the data from a different column. For example first
-	 * name / last name columns make sense to do a multi-column sort over the
-	 * two columns.
-	 */
-	"aDataSort": null,
-	"iDataSort": -1,
 
 	ariaTitle: '',
 
