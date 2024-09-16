@@ -55,10 +55,6 @@ var DataTable = function (selector, options) {
 
 		$(this).trigger('options.dt', oInit);
 
-		/* Backwards compatibility for the defaults */
-		_fnCompatOpts(defaults);
-		_fnCompatCols(defaults.column);
-
 		/* Convert the camel-case defaults to Hungarian */
 		_fnCamelToHungarian(defaults, defaults, true);
 		_fnCamelToHungarian(defaults.column, defaults.column, true);
@@ -122,9 +118,6 @@ var DataTable = function (selector, options) {
 		// to the settings array, so we can self reference the table instance if more than one
 		oSettings.oInstance = (_that.length === 1) ? _that : $this.dataTable();
 
-		// Backwards compatibility, before we apply all the defaults
-		_fnCompatOpts(oInit);
-
 		// Apply the defaults and init options to make a single init object will all
 		// options defined from defaults and instance options.
 		oInit = _fnExtend($.extend(true, {}, defaults), oInit);
@@ -132,21 +125,19 @@ var DataTable = function (selector, options) {
 
 		// Map the initialisation options onto the settings object
 		_fnMap(oSettings.oFeatures, oInit, [
-			"bPaginate",
-			"bLengthChange",
-			"bFilter",
-			"bSort",
-			"bInfo",
+			"paging",
+			"searching",
+			"ordering",
 		]);
 		_fnMap(oSettings, oInit, [
-			"aaSorting",
-			"aLengthMenu",
+			"order",
+			"lengthMenu",
 			"rowId",
 			"typeDetect",
 			["oSearch", "oPreviousSearch"],
 		]);
 
-		oSettings._iDisplayLength = oSettings.aLengthMenu[0];
+		oSettings._iDisplayLength = oSettings.lengthMenu[0];
 
 		oSettings.rowIdFn = _fnGetObjectDataFn(oInit.rowId);
 
@@ -170,8 +161,8 @@ var DataTable = function (selector, options) {
 		var initHeaderLayout = _fnDetectHeader(oSettings, thead[0]);
 
 		// If we don't have a columns array, then generate one with nulls
-		if (oInit.aoColumns) {
-			columnsInit = oInit.aoColumns;
+		if (oInit.columns) {
+			columnsInit = oInit.columns;
 		}
 		else if (initHeaderLayout.length) {
 			for (i = 0, iLen = initHeaderLayout[0].length; i < iLen; i++) {
@@ -200,7 +191,7 @@ var DataTable = function (selector, options) {
 			};
 
 			$(rowOne[0]).children('th, td').each(function (i, cell) {
-				var col = oSettings.aoColumns[i];
+				var col = oSettings.columns[i];
 
 				if (!col) {
 					_fnLog(oSettings, 0, 'Incorrect column count', 18);
@@ -223,15 +214,6 @@ var DataTable = function (selector, options) {
 					}
 				}
 			});
-		}
-
-		// If aaSorting is not defined, then we use the first indicator in asSorting
-		// in case that has been altered, so the default sort reflects that option
-		if (oInit.aaSorting === undefined) {
-			var sorting = oSettings.aaSorting;
-			for (i = 0, iLen = sorting.length; i < iLen; i++) {
-				sorting[i][1] = oSettings.aoColumns[i].asSorting[0];
-			}
 		}
 
 		// Do a first pass on the sorting classes (allows any size changes to be taken into
@@ -1482,44 +1464,6 @@ function _fnCamelToHungarian(src, user, force) {
 	});
 }
 
-/**
- * Map one parameter onto another
- *  @param {object} o Object to map
- *  @param {*} knew The new parameter name
- *  @param {*} old The old parameter name
- */
-var _fnCompatMap = function (o, knew, old) {
-	if (o[knew] !== undefined) {
-		o[old] = o[knew];
-	}
-};
-
-
-/**
- * Provide backwards compatibility for the main DT options. Note that the new
- * options are mapped onto the old parameters, so this is an external interface
- * change only.
- *  @param {object} init Object to map
- */
-function _fnCompatOpts(init) {
-	_fnCompatMap(init, 'ordering', 'bSort');
-	_fnCompatMap(init, 'order', 'aaSorting');
-	_fnCompatMap(init, 'paging', 'bPaginate');
-	_fnCompatMap(init, 'searching', 'bFilter');
-}
-
-
-/**
- * Provide backwards compatibility for column options. Note that the new options
- * are mapped onto the old parameters, so this is an external interface change
- * only.
- *  @param {object} init Object to map
- */
-function _fnCompatCols(init) {
-	_fnCompatMap(init, 'orderable', 'bSortable');
-	_fnCompatMap(init, 'orderSequence', 'asSorting');
-}
-
 // #endregion
 // #region core.columns.js
 
@@ -1529,15 +1473,15 @@ function _fnCompatCols(init) {
  *  @memberof DataTable#oApi
  */
 function _fnAddColumn(oSettings) {
-	// Add column to aoColumns array
+	// Add column to columns array
 	var oDefaults = DataTable.defaults.column;
-	var iCol = oSettings.aoColumns.length;
+	var iCol = oSettings.columns.length;
 	var oCol = $.extend({}, DataTable.models.oColumn, oDefaults, {
 		mData: iCol,
 		idx: iCol,
 		colEl: $('<col>').attr('data-dt-column', iCol)
 	});
-	oSettings.aoColumns.push(oCol);
+	oSettings.columns.push(oCol);
 }
 
 
@@ -1545,11 +1489,11 @@ function _fnAddColumn(oSettings) {
  * Apply options for a column
  *  @param {object} oSettings dataTables settings object
  *  @param {int} iCol column index to consider
- *  @param {object} oOptions object with sType, bVisible and bSearchable etc
+ *  @param {object} oOptions object with sType, bVisible and searchable etc
  *  @memberof DataTable#oApi
  */
 function _fnColumnOptions(oSettings, iCol) {
-	var oCol = oSettings.aoColumns[iCol];
+	var oCol = oSettings.columns[iCol];
 
 	/* Cache the data get and set functions for speed */
 	var mDataSrc = oCol.mData;
@@ -1570,8 +1514,8 @@ function _fnColumnOptions(oSettings, iCol) {
 	};
 
 	/* Feature sorting overrides column specific when off */
-	if (!oSettings.oFeatures.bSort) {
-		oCol.bSortable = false;
+	if (!oSettings.oFeatures.ordering) {
+		oCol.orderable = false;
 	}
 }
 
@@ -1595,7 +1539,7 @@ function _fnAdjustColumnSizing(settings) {
  * @param {*} settings DataTables settings object
  */
 function _fnColumnSizes(settings) {
-	var cols = settings.aoColumns;
+	var cols = settings.columns;
 
 	for (var i = 0; i < cols.length; i++) {
 		var width = _fnColumnsSumWidth(settings, [i], false);
@@ -1618,7 +1562,7 @@ function _fnColumnSizes(settings) {
  *  @memberof DataTable#oApi
  */
 function _fnVisibleToColumnIndex(oSettings, iMatch) {
-	var aiVis = oSettings.aoColumns.map((_, i) => i);
+	var aiVis = oSettings.columns.map((_, i) => i);
 
 	return typeof aiVis[iMatch] === 'number' ?
 		aiVis[iMatch] :
@@ -1635,7 +1579,7 @@ function _fnVisibleToColumnIndex(oSettings, iMatch) {
  *  @memberof DataTable#oApi
  */
 function _fnColumnIndexToVisible(oSettings, iMatch) {
-	var aiVis = oSettings.aoColumns.map((_, i) => i);
+	var aiVis = oSettings.columns.map((_, i) => i);
 	var iPos = aiVis.indexOf(iMatch);
 
 	return iPos !== -1 ? iPos : null;
@@ -1685,7 +1629,7 @@ function _typeResult(typeDetect, res) {
  *  @memberof DataTable#oApi
  */
 function _fnColumnTypes(settings) {
-	var columns = settings.aoColumns;
+	var columns = settings.columns;
 	var data = settings.aoData;
 	var types = DataTable.ext.type.detect;
 	var i, ien, j, jen, k, ken;
@@ -1837,14 +1781,14 @@ function _columnAutoClass(container, colIdx, className) {
  * they relate to column indexes. The callback function will then apply the
  * definition found for a column to a suitable configuration object.
  *  @param {object} oSettings dataTables settings object
- *  @param {array} aoCols The aoColumns array that defines columns individually
+ *  @param {array} aoCols The columns array that defines columns individually
  *  @param {function} fn Callback function - takes two parameters, the calculated
  *    column index and the definition for that column.
  *  @memberof DataTable#oApi
  */
 function _fnApplyColumnDefs(oSettings, aoCols, fn) {
 	var i, iLen;
-	var columns = oSettings.aoColumns;
+	var columns = oSettings.columns;
 
 	if (aoCols) {
 		for (i = 0, iLen = aoCols.length; i < iLen; i++) {
@@ -1879,7 +1823,7 @@ function _fnColumnsSumWidth(settings, targets, original) {
 
 	var sum = 0;
 	var unit;
-	var columns = settings.aoColumns;
+	var columns = settings.columns;
 
 	for (var i = 0, ien = targets.length; i < ien; i++) {
 		var column = columns[targets[i]];
@@ -1946,7 +1890,7 @@ function _fnAddData(settings, dataIn, tr, tds) {
 	rowModel._aData = dataIn;
 	settings.aoData.push(rowModel);
 
-	var columns = settings.aoColumns;
+	var columns = settings.columns;
 
 	for (var i = 0, iLen = columns.length; i < iLen; i++) {
 		// Invalidate the column types as the new data needs to be revalidated
@@ -2012,7 +1956,7 @@ function _fnGetCellData(settings, rowIdx, colIdx, type) {
 	}
 
 	var draw = settings.iDraw;
-	var col = settings.aoColumns[colIdx];
+	var col = settings.columns[colIdx];
 	var rowData = row._aData;
 	var cellData = col.fnGetData(rowData, type, {
 		settings: settings,
@@ -2111,30 +2055,6 @@ var _fnGetObjectDataFn = DataTable.util.get;
  */
 var _fnSetObjectDataFn = DataTable.util.set;
 
-
-/**
- * Return an array with the full table data
- *  @param {object} oSettings dataTables settings object
- *  @returns array {array} aData Master data array
- *  @memberof DataTable#oApi
- */
-function _fnGetDataMaster(settings) {
-	return _pluck(settings.aoData, '_aData');
-}
-
-
-/**
- * Nuke the table
- *  @param {object} oSettings dataTables settings object
- *  @memberof DataTable#oApi
- */
-function _fnClearTable(settings) {
-	settings.aoData.length = 0;
-	settings.aiDisplayMaster.length = 0;
-	settings.aiDisplay.length = 0;
-	settings.aIds = {};
-}
-
 /**
  * Build a data source object from an HTML row, reading the contents of the
  * cells that are in the row.
@@ -2157,7 +2077,7 @@ function _fnGetRowElements(settings, row) {
 		tds = [],
 		td = row.firstChild,
 		name, col, i = 0, contents,
-		columns = settings.aoColumns,
+		columns = settings.columns,
 		objectRead = settings._rowReadObject;
 
 	// Allow the data object to be passed in, or construct
@@ -2232,7 +2152,7 @@ function _fnGetRowElements(settings, row) {
  */
 function _fnGetRowDisplay(settings, rowIdx) {
 	let rowModal = settings.aoData[rowIdx];
-	let columns = settings.aoColumns;
+	let columns = settings.columns;
 
 	if (!rowModal.displayData) {
 		// Need to render and cache
@@ -2261,7 +2181,6 @@ function _fnGetRowDisplay(settings, rowIdx) {
 function _fnCreateTr(oSettings, iRow, nTr, anTds) {
 	var
 		row = oSettings.aoData[iRow],
-		rowData = row._aData,
 		cells = [],
 		nTd, oCol;
 
@@ -2281,8 +2200,8 @@ function _fnCreateTr(oSettings, iRow, nTr, anTds) {
 	_fnRowAttributes(oSettings, row);
 
 	/* Process each column */
-	for (let i = 0; i < oSettings.aoColumns.length; i++) {
-		oCol = oSettings.aoColumns[i];
+	for (let i = 0; i < oSettings.columns.length; i++) {
+		oCol = oSettings.columns[i];
 
 		nTd = anTds[i];
 
@@ -2353,7 +2272,7 @@ function _fnRowAttributes(settings, row) {
  */
 function _fnBuildHead(settings, side) {
 	var classes = settings.oClasses;
-	var columns = settings.aoColumns;
+	var columns = settings.columns;
 	var row;
 	var target = side === 'header'
 		? settings.nTHead
@@ -2366,7 +2285,7 @@ function _fnBuildHead(settings, side) {
 	}
 
 	// If no cells yet and we have content for them, then create
-	if (side === 'header' || _pluck(settings.aoColumns, titleProp).join('')) {
+	if (side === 'header' || _pluck(settings.columns, titleProp).join('')) {
 		row = $('tr', target);
 
 		// Add a row if needed
@@ -2417,7 +2336,7 @@ function _fnHeaderLayout(settings, source) {
 	var cell;
 	var local = [];
 	var structure = [];
-	var columns = settings.aoColumns;
+	var columns = settings.columns;
 	var columnCount = columns.length;
 	var rowspan, colspan;
 
@@ -2541,7 +2460,7 @@ function _fnDraw(oSettings) {
 	var aiDisplay = oSettings.aiDisplay;
 	var iDisplayStart = oSettings._iDisplayStart;
 	var iDisplayEnd = oSettings.fnDisplayEnd();
-	var columns = oSettings.aoColumns;
+	var columns = oSettings.columns;
 	var body = $(oSettings.nTBody);
 
 	oSettings.bDrawing = true;
@@ -2607,8 +2526,8 @@ function _fnDraw(oSettings) {
  */
 function _fnReDraw(settings, recompute) {
 	var features = settings.oFeatures,
-		sort = features.bSort,
-		filter = features.bFilter;
+		sort = features.ordering,
+		filter = features.searching;
 
 	if (recompute === undefined || recompute === true) {
 		// Resolve any column types that are unknown due to addition or invalidation
@@ -2632,7 +2551,6 @@ function _fnReDraw(settings, recompute) {
 	_fnDraw(settings);
 }
 
-
 /*
  * Table is empty - create a row with an empty message in it
  */
@@ -2651,223 +2569,6 @@ function _emptyRow(settings) {
 		}).html(zero))[0];
 }
 
-
-/**
- * Expand the layout items into an object for the rendering function
- */
-function _layoutItems(row, align, items) {
-	if (Array.isArray(items)) {
-		for (var i = 0; i < items.length; i++) {
-			_layoutItems(row, align, items[i]);
-		}
-
-		return;
-	}
-
-	var rowCell = row[align];
-
-	// If it is an object, then there can be multiple features contained in it
-	if ($.isPlainObject(items)) {
-		// A feature plugin cannot be named "features" due to this check
-		if (items.features) {
-			if (items.rowId) {
-				row.id = items.rowId;
-			}
-			if (items.rowClass) {
-				row.className = items.rowClass;
-			}
-
-			rowCell.id = items.id;
-			rowCell.className = items.className;
-
-			_layoutItems(row, align, items.features);
-		}
-		else {
-			Object.keys(items).map(function (key) {
-				rowCell.contents.push({
-					feature: key,
-					opts: items[key]
-				});
-			});
-		}
-	}
-	else {
-		rowCell.contents.push(items);
-	}
-}
-
-/**
- * Find, or create a layout row
- */
-function _layoutGetRow(rows, rowNum, align) {
-	var row;
-
-	// Find existing rows
-	for (var i = 0; i < rows.length; i++) {
-		row = rows[i];
-
-		if (row.rowNum === rowNum) {
-			// full is on its own, but start and end share a row
-			if (
-				(align === 'full' && row.full) ||
-				((align === 'start' || align === 'end') && (row.start || row.end))
-			) {
-				if (!row[align]) {
-					row[align] = {
-						contents: []
-					};
-				}
-
-				return row;
-			}
-		}
-	}
-
-	// If we get this far, then there was no match, create a new row
-	row = {
-		rowNum: rowNum
-	};
-
-	row[align] = {
-		contents: []
-	};
-
-	rows.push(row);
-
-	return row;
-}
-
-/**
- * Convert a `layout` object given by a user to the object structure needed
- * for the renderer. This is done twice, once for above and once for below
- * the table. Ordering must also be considered.
- *
- * @param {*} settings DataTables settings object
- * @param {*} layout Layout object to convert
- * @param {string} side `top` or `bottom`
- * @returns Converted array structure - one item for each row.
- */
-function _layoutArray(settings, side) {
-	var layout = {
-		topStart: 'pageLength',
-		topEnd: 'search',
-		bottomStart: 'info',
-		bottomEnd: 'paging'
-	};
-
-	var rows = [];
-
-	// Split out into an array
-	$.each(layout, function (pos, items) {
-		if (items === null) {
-			return;
-		}
-
-		var parts = pos.match(/^([a-z]+)([0-9]*)([A-Za-z]*)$/);
-		var rowNum = parts[2]
-			? parts[2] * 1
-			: 0;
-		var align = parts[3]
-			? parts[3].toLowerCase()
-			: 'full';
-
-		// Filter out the side we aren't interested in
-		if (parts[1] !== side) {
-			return;
-		}
-
-		// Get or create the row we should attach to
-		var row = _layoutGetRow(rows, rowNum, align);
-
-		_layoutItems(row, align, items);
-	});
-
-	// Order by item identifier
-	rows.sort(function (a, b) {
-		var order1 = a.rowNum;
-		var order2 = b.rowNum;
-
-		// If both in the same row, then the row with `full` comes first
-		if (order1 === order2) {
-			var ret = a.full && !b.full ? -1 : 1;
-
-			return side === 'bottom'
-				? ret * -1
-				: ret;
-		}
-
-		return order2 - order1;
-	});
-
-	// Invert for below the table
-	if (side === 'bottom') {
-		rows.reverse();
-	}
-
-	for (var row = 0; row < rows.length; row++) {
-		delete rows[row].rowNum;
-
-		_layoutResolve(settings, rows[row]);
-	}
-
-	return rows;
-}
-
-
-/**
- * Convert the contents of a row's layout object to nodes that can be inserted
- * into the document by a renderer. Execute functions, look up plug-ins, etc.
- *
- * @param {*} settings DataTables settings object
- * @param {*} row Layout object for this row
- */
-function _layoutResolve(settings, row) {
-	var getFeature = function (feature, opts) {
-		if (!_ext.features[feature]) {
-			_fnLog(settings, 0, 'Unknown feature: ' + feature);
-		}
-
-		return _ext.features[feature].apply(this, [settings, opts]);
-	};
-
-	var resolve = function (item) {
-		if (!row[item]) {
-			return;
-		}
-
-		var line = row[item].contents;
-
-		for (var i = 0, ien = line.length; i < ien; i++) {
-			if (!line[i]) {
-				continue;
-			}
-			else if (typeof line[i] === 'string') {
-				line[i] = getFeature(line[i], null);
-			}
-			else if ($.isPlainObject(line[i])) {
-				// If it's an object, it just has feature and opts properties from
-				// the transform in _layoutArray
-				line[i] = getFeature(line[i].feature, line[i].opts);
-			}
-			else if (typeof line[i].node === 'function') {
-				line[i] = line[i].node(settings);
-			}
-			else if (typeof line[i] === 'function') {
-				var inst = line[i](settings);
-
-				line[i] = typeof inst.node === 'function' ?
-					inst.node() :
-					inst;
-			}
-		}
-	};
-
-	resolve('start');
-	resolve('end');
-	resolve('full');
-}
-
-
 /**
  * Add the options to the page HTML for the table
  *  @param {object} settings DataTables settings object
@@ -2884,14 +2585,36 @@ function _fnAddOptionsHtml(settings) {
 
 	settings.nTableWrapper = insert;
 
-	var top = _layoutArray(settings, 'top');
-	var bottom = _layoutArray(settings, 'bottom');
+	var getFeature = function (feature, opts) {
+		if (!_ext.features[feature]) {
+			_fnLog(settings, 0, 'Unknown feature: ' + feature);
+		}
+
+		return _ext.features[feature].apply(this, [settings, opts]);
+	};
+
+	//var top = _layoutArray(settings, 'top');
+	var top = {
+		start: {
+			contents: [ getFeature('pageLength', null), ]
+		},
+		end: {
+			contents: [ getFeature('search', null) ]
+		}
+	};
+
+	var bottom = {
+		start: {
+			contents: [ getFeature('info', null), ]
+		},
+		end: {
+			contents: [ getFeature('paging', null) ]
+		}
+	};
 	var renderer = _fnRenderer('layout');
 
 	// Everything above - the renderer will actually insert the contents into the document
-	top.forEach(function (item) {
-		renderer(settings, insert, item);
-	});
+	renderer(settings, insert, top);
 
 	// The table - always the center of attention
 	renderer(settings, insert, {
@@ -2902,9 +2625,7 @@ function _fnAddOptionsHtml(settings) {
 	});
 
 	// Everything below
-	bottom.forEach(function (item) {
-		renderer(settings, insert, item);
-	});
+	renderer(settings, insert, bottom);
 }
 
 /**
@@ -2917,7 +2638,7 @@ function _fnAddOptionsHtml(settings) {
  *  @memberof DataTable#oApi
  */
 function _fnDetectHeader(settings, thead, write) {
-	var columns = settings.aoColumns;
+	var columns = settings.columns;
 	var rows = $(thead).children('tr');
 	var row, cell;
 	var k, l, shifted, column, colspan, rowspan;
@@ -3216,7 +2937,7 @@ var __filter_div_textContent = __filter_div.textContent !== undefined;
 
 // Update the filtering data for each row if needed (by invalidation or first run)
 function _fnFilterData(settings) {
-	var columns = settings.aoColumns;
+	var columns = settings.columns;
 	var data = settings.aoData;
 	var column;
 	var filterData, cellData, row;
@@ -3235,7 +2956,7 @@ function _fnFilterData(settings) {
 			for (let j = 0; j < columns.length; j++) {
 				column = columns[j];
 
-				if (column.bSearchable) {
+				if (column.searchable) {
 					cellData = _fnGetCellData(settings, rowIdx, j, 'filter');
 
 					// Search in DataTables is string based
@@ -3480,7 +3201,7 @@ function _fnProcessingRun(settings, enable, run) {
 function _fnCalculateColumnWidths(settings) {
 	var
 		table = settings.nTable,
-		columns = settings.aoColumns,
+		columns = settings.columns,
 		visibleColumns = _range(columns.length),
 		tableWidthAttr = table.getAttribute('width'), // from DOM element
 		tableContainer = table.parentNode,
@@ -3631,7 +3352,7 @@ function _fnCalculateColumnWidths(settings) {
  *  @memberof DataTable#oApi
  */
 function _fnGetMaxLenString(settings, colIdx) {
-	var column = settings.aoColumns[colIdx];
+	var column = settings.columns[colIdx];
 
 	if (!column.maxLenString) {
 		var s, max = '', maxLen = -1;
@@ -3697,11 +3418,11 @@ function _fnStringToCss(s) {
  * @param {*} settings DT settings
  */
 function _colGroup(settings) {
-	var i, cols = settings.aoColumns;
+	var cols = settings.columns;
 
 	settings.colgroup.empty();
 
-	for (i = 0; i < cols.length; i++) {
+	for (let i = 0; i < cols.length; i++) {
 		settings.colgroup.append(cols[i].colEl);
 	}
 }
@@ -3721,9 +3442,9 @@ function _fnSortInit(settings) {
 
 	// Need to resolve the user input array into our internal structure
 	var order = [];
-	_fnSortResolve(order, settings.aaSorting);
+	_fnSortResolve(order, settings.order);
 
-	settings.aaSorting = order;
+	settings.order = order;
 }
 
 
@@ -3742,7 +3463,7 @@ function _fnSortAttachListener(settings, node, selector) {
 
 				// If the first entry is no sort, then subsequent
 				// sort columns are ignored
-				if (settings.aaSorting.length === 1 && settings.aaSorting[0][1] === '') {
+				if (settings.order.length === 1 && settings.order[0][1] === '') {
 					break;
 				}
 			}
@@ -3803,28 +3524,28 @@ function _fnSortFlatten(settings) {
 	var
 		aSort = [],
 		extSort = DataTable.ext.type.order,
-		aoColumns = settings.aoColumns,
+		columns = settings.columns,
 		iCol, sType, srcCol,
 		nestedSort = [];
 
-	if (!settings.oFeatures.bSort) {
+	if (!settings.oFeatures.ordering) {
 		return aSort;
 	}
 
 	// Build the sort array, with pre-fix and post-fix options if they have been
 	// specified
 
-	_fnSortResolve(nestedSort, settings.aaSorting);
+	_fnSortResolve(nestedSort, settings.order);
 
 	for (let i = 0; i < nestedSort.length; i++) {
 		srcCol = nestedSort[i][0];
 
-		if (aoColumns[srcCol]) {
-			iCol = aoColumns[srcCol].idx;
-			sType = aoColumns[iCol].sType || 'string';
+		if (columns[srcCol]) {
+			iCol = columns[srcCol].idx;
+			sType = columns[iCol].sType || 'string';
 
 			if (nestedSort[i]._idx === undefined) {
-				nestedSort[i]._idx = aoColumns[iCol].asSorting.indexOf(nestedSort[i][1]);
+				nestedSort[i]._idx = columns[iCol].orderSequence.indexOf(nestedSort[i][1]);
 			}
 
 			if (nestedSort[i][1]) {
@@ -3861,7 +3582,7 @@ function _fnSort(oSettings, col, dir) {
 	// Allow a specific column to be sorted, which will _not_ alter the display
 	// master
 	if (col !== undefined) {
-		var srcCol = oSettings.aoColumns[col];
+		var srcCol = oSettings.columns[col];
 		aSort = [{
 			src: col,
 			col: col,
@@ -3975,30 +3696,30 @@ function _fnSort(oSettings, col, dir) {
  *  @memberof DataTable#oApi
  */
 function _fnSortAdd(settings, colIdx) {
-	var col = settings.aoColumns[colIdx];
-	var sorting = settings.aaSorting;
-	var asSorting = col.asSorting;
+	var col = settings.columns[colIdx];
+	var sorting = settings.order;
+	var orderSequence = col.orderSequence;
 	var nextSortIdx;
 	var next = function (a, overflow) {
 		var idx = a._idx;
 		if (idx === undefined) {
-			idx = asSorting.indexOf(a[1]);
+			idx = orderSequence.indexOf(a[1]);
 		}
 
-		return idx + 1 < asSorting.length ?
+		return idx + 1 < orderSequence.length ?
 			idx + 1 :
 			overflow ?
 				null :
 				0;
 	};
 
-	if (!col.bSortable) {
+	if (!col.orderable) {
 		return false;
 	}
 
 	// Convert to 2D array if needed
 	if (typeof sorting[0] === 'number') {
-		sorting = settings.aaSorting = [sorting];
+		sorting = settings.order = [sorting];
 	}
 
 	// If appending the sort then we are multi-column sorting
@@ -4007,13 +3728,13 @@ function _fnSortAdd(settings, colIdx) {
 		nextSortIdx = next(sorting[0]);
 
 		sorting.length = 1;
-		sorting[0][1] = asSorting[nextSortIdx];
+		sorting[0][1] = orderSequence[nextSortIdx];
 		sorting[0]._idx = nextSortIdx;
 	}
 	else {
 		// Single column - sort only on this column
 		sorting.length = 0;
-		sorting.push([colIdx, asSorting[0]]);
+		sorting.push([colIdx, orderSequence[0]]);
 		sorting[0]._idx = 0;
 	}
 }
@@ -4032,7 +3753,7 @@ function _fnSortingClasses(settings) {
 	var features = settings.oFeatures;
 	var colIdx;
 
-	if (features.bSort) {
+	if (features.ordering) {
 		// Remove old sorting classes
 		for (let i = 0; i < oldSort.length; i++) {
 			colIdx = oldSort[i].src;
@@ -4059,7 +3780,7 @@ function _fnSortingClasses(settings) {
 // cache), or from a sort formatter
 function _fnSortData(settings, colIdx) {
 	// Custom sorting function - provided by the sort data type
-	var column = settings.aoColumns[colIdx];
+	var column = settings.columns[colIdx];
 
 	// Use / populate cache
 	var row, cellData;
@@ -5120,7 +4841,7 @@ var __column_header = function (settings, column) {
 
 var __column_selector = function (settings, selector, opts) {
 	var
-		columns = settings.aoColumns,
+		columns = settings.columns,
 		names = _pluck(columns, 'sName'),
 		titles = _pluck(columns, 'sTitle'),
 		cells = DataTable.util.get('[].[].cell')(settings.aoHeader),
@@ -5289,7 +5010,7 @@ _api_register([
 	}
 	else {
 		return this.iterator('table', function (settings, i) {
-			settings.aaSorting = that[i].map(function (col) {
+			settings.order = that[i].map(function (col) {
 				return [col, dir];
 			});
 		});
@@ -5298,11 +5019,11 @@ _api_register([
 
 _api_registerPlural('columns().orderable()', 'column().orderable()', function (directions) {
 	return this.iterator('column', function (settings, idx) {
-		var col = settings.aoColumns[idx];
+		var col = settings.columns[idx];
 
 		return directions ?
-			col.asSorting :
-			col.bSortable;
+			col.orderSequence :
+			col.orderable;
 	}, 1);
 });
 
@@ -5472,7 +5193,7 @@ DataTable.models.oRow = {
 
 /**
  * Template object for the column information object in DataTables. This object
- * is held in the settings aoColumns array and contains all the information that
+ * is held in the settings columns array and contains all the information that
  * DataTables needs about each individual column.
  *
  * Note that this object is related to {@link DataTable.defaults.column}
@@ -5494,18 +5215,18 @@ DataTable.models.oColumn = {
 	 * Sort it again (click again) and it will move on to the next index.
 	 * Repeat until loop.
 	 */
-	"asSorting": null,
+	"orderSequence": null,
 
 	/**
 	 * Flag to indicate if the column is searchable, and thus should be included
 	 * in the filtering or not.
 	 */
-	"bSearchable": null,
+	"searchable": null,
 
 	/**
 	 * Flag to indicate if the column is sortable or not.
 	 */
-	"bSortable": null,
+	"orderable": null,
 
 	/**
 	 * Store for manual type assignment using the `column.type` option. This
@@ -5609,7 +5330,7 @@ DataTable.defaults = {
 	 * should contain an array for each column to be sorted initially containing
 	 * the column's index and a direction string ('asc' or 'desc').
 	 */
-	"aaSorting": [[0, 'asc']],
+	"order": [[0, 'asc']],
 
 
 	/**
@@ -5623,7 +5344,7 @@ DataTable.defaults = {
 	 * Note that the `pageLength` property will be automatically set to the
 	 * first value given in this array, unless `pageLength` is also provided.
 	 */
-	"aLengthMenu": [10, 25, 50, 100],
+	"lengthMenu": [10, 25, 50, 100],
 
 
 	/**
@@ -5635,7 +5356,7 @@ DataTable.defaults = {
 	 * column that you have in your table (these can be null if you don't which
 	 * to specify any options).
 	 */
-	"aoColumns": null,
+	"columns": null,
 
 	/**
 	 * Enable or disable filtering of data. Filtering in DataTables is "smart" in
@@ -5646,31 +5367,19 @@ DataTable.defaults = {
 	 * default filtering input box and retain filtering abilities, please use
 	 * {@link DataTable.defaults.dom}.
 	 */
-	"bFilter": true,
-
-	/**
-	 * Used only for compatiblity with DT1
-	 * @deprecated
-	 */
-	"bInfo": true,
-
-	/**
-	 * Used only for compatiblity with DT1
-	 * @deprecated
-	 */
-	"bLengthChange": true,
+	"searching": true,
 
 	/**
 	 * Enable or disable pagination.
 	 */
-	"bPaginate": true,
+	"paging": true,
 
 
 	/**
 	 * Enable or disable sorting of columns. Sorting of individual columns can be
 	 * disabled by the `sortable` option for each column.
 	 */
-	"bSort": true,
+	"ordering": true,
 
 
 	/**
@@ -5875,19 +5584,19 @@ DataTable.defaults.column = {
 	 * behaviour of the sort handler (i.e. only allow ascending ordering etc)
 	 * using this parameter.
 	 */
-	"asSorting": ['asc', 'desc', ''],
+	"orderSequence": ['asc', 'desc', ''],
 
 
 	/**
 	 * Enable or disable filtering on the data in this column.
 	 */
-	"bSearchable": true,
+	"searchable": true,
 
 
 	/**
 	 * Enable or disable ordering on this column.
 	 */
-	"bSortable": true,
+	"orderable": true,
 
 	/**
 	 * This property can be used to read data from any data source property,
@@ -6032,19 +5741,7 @@ DataTable.models.oSettings = {
 		 * Note that this parameter will be set by the initialisation routine. To
 		 * set a default use {@link DataTable.defaults}.
 		 */
-		"bFilter": null,
-
-		/**
-		 * Used only for compatiblity with DT1
-		 * @deprecated
-		 */
-		"bInfo": true,
-
-		/**
-		 * Used only for compatiblity with DT1
-		 * @deprecated
-		 */
-		"bLengthChange": true,
+		"searching": null,
 
 		/**
 		 * Pagination enabled or not. Note that if this is disabled then length
@@ -6052,14 +5749,14 @@ DataTable.models.oSettings = {
 		 * Note that this parameter will be set by the initialisation routine. To
 		 * set a default use {@link DataTable.defaults}.
 		 */
-		"bPaginate": null,
+		"paging": null,
 
 		/**
 		 * Sorting enablement flag.
 		 * Note that this parameter will be set by the initialisation routine. To
 		 * set a default use {@link DataTable.defaults}.
 		 */
-		"bSort": null,
+		"ordering": null,
 	},
 
 	/**
@@ -6098,7 +5795,7 @@ DataTable.models.oSettings = {
 	/**
 	 * Store information about each column that is in use
 	 */
-	"aoColumns": [],
+	"columns": [],
 
 	/**
 	 * Store information about the table's header
@@ -6128,7 +5825,7 @@ DataTable.models.oSettings = {
 	 * Note that this parameter will be set by the initialisation routine. To
 	 * set a default use {@link DataTable.defaults}.
 	 */
-	"aaSorting": null,
+	"order": null,
 
 	/**
 	 * Array of callback functions for draw callback functions
@@ -6181,7 +5878,7 @@ DataTable.models.oSettings = {
 	 * Note that this parameter will be set by the initialisation routine. To
 	 * set a default use {@link DataTable.defaults}.
 	 */
-	"aLengthMenu": null,
+	"lengthMenu": null,
 
 	/**
 	 * Counter for the draws that the table does. Also used as a tracker for
@@ -6259,7 +5956,7 @@ DataTable.models.oSettings = {
 			calc = start + len,
 			records = this.aiDisplay.length,
 			features = this.oFeatures,
-			paginate = features.bPaginate;
+			paginate = features.paging;
 
 		return !paginate || calc > records || len === -1
 			? records
@@ -6731,7 +6428,7 @@ $.extend(true, DataTable.ext.renderer, {
 		_: function (settings, cell, classes) {
 			cell.addClass(classes.thead.cell);
 
-			if (!settings.oFeatures.bSort) {
+			if (!settings.oFeatures.ordering) {
 				cell.addClass(classes.order.none);
 			}
 
@@ -6763,7 +6460,7 @@ $.extend(true, DataTable.ext.renderer, {
 				var i;
 				var orderClasses = classes.order;
 				var columns = ctx.api.columns(cell);
-				var col = settings.aoColumns[columns.flatten()[0]];
+				var col = settings.columns[columns.flatten()[0]];
 				var orderable = columns.orderable().includes(true);
 				var ariaType = '';
 				var indexes = columns.indexes();
@@ -6808,7 +6505,7 @@ $.extend(true, DataTable.ext.renderer, {
 
 				if (indexes[0] == firstVis) {
 					var firstSort = sorting[0];
-					var sortOrder = col.asSorting;
+					var sortOrder = col.orderSequence;
 
 					cell.attr('aria-sort', firstSort.dir === 'asc' ? 'ascending' : 'descending');
 
@@ -6922,11 +6619,6 @@ DataTable.feature.register('div', function (settings, opts) {
 // #region features.info.js
 
 DataTable.feature.register('info', function (settings, opts) {
-	// For compatibility with the legacy `info` top level option
-	if (!settings.oFeatures.bInfo) {
-		return null;
-	}
-
 	var
 		lang = settings.oLanguage,
 		tid = settings.sTableId,
@@ -7008,7 +6700,7 @@ var __searchCounter = 0;
 // - placeholder
 DataTable.feature.register('search', function (settings, opts) {
 	// Don't show the input if filtering isn't available on the table
-	if (!settings.oFeatures.bFilter) {
+	if (!settings.oFeatures.searching) {
 		return null;
 	}
 
@@ -7112,7 +6804,7 @@ DataTable.feature.register('search', function (settings, opts) {
 // - buttons - number of buttons to show - must be odd
 DataTable.feature.register('paging', function (settings, opts) {
 	// Don't show the paging input if the table doesn't have paging enabled
-	if (!settings.oFeatures.bPaginate) {
+	if (!settings.oFeatures.paging) {
 		return null;
 	}
 
@@ -7410,12 +7102,12 @@ DataTable.feature.register('pageLength', function (settings, opts) {
 	var features = settings.oFeatures;
 
 	// For compatibility with the legacy `pageLength` top level option
-	if (!features.bPaginate || !features.bLengthChange) {
+	if (!features.paging) {
 		return null;
 	}
 
 	opts = $.extend({
-		menu: settings.aLengthMenu,
+		menu: settings.lengthMenu,
 		text: settings.oLanguage.sLengthMenu
 	}, opts);
 
