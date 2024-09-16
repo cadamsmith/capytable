@@ -153,9 +153,6 @@ var DataTable = function (selector, options) {
 
 		oSettings.rowIdFn = _fnGetObjectDataFn(oInit.rowId);
 
-		/* Browser support detection */
-		_fnBrowserDetect(oSettings);
-
 		var oClasses = oSettings.oClasses;
 
 		$.extend(oClasses, DataTable.ext.classes, oInit.oClasses);
@@ -324,14 +321,6 @@ DataTable.ext = _ext = {
 	 *  @default {}
 	 */
 	classes: {},
-
-
-	/**
-	 * DataTables build type (expanded by the download builder)
-	 *
-	 *  @type string
-	 */
-	builder: "-source-",
 
 
 	/**
@@ -1072,21 +1061,6 @@ var _stripHtml = function (input) {
 	return previous;
 };
 
-// Replaceable function in api.util
-var _escapeHtml = function (d) {
-	if (Array.isArray(d)) {
-		d = d.join(',');
-	}
-
-	return typeof d === 'string' ?
-		d
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;') :
-		d;
-};
-
 // Remove diacritics from a string by decomposing it and then removing
 // non-ascii characters
 var _normalize = function (str, both) {
@@ -1210,10 +1184,10 @@ function _addClass(el, name) {
 * function will override the default method DataTables uses.
 */
 function _formatNumber(toFormat) {
-   return toFormat.toString().replace(
-	   /\B(?=(\d{3})+(?!\d))/g,
-	   ","
-   );
+	return toFormat.toString().replace(
+		/\B(?=(\d{3})+(?!\d))/g,
+		","
+	);
 }
 
 // #endregion
@@ -1620,66 +1594,6 @@ function _fnCompatCols(init) {
 	}
 }
 
-
-/**
- * Browser feature detection for capabilities, quirks
- *  @param {object} settings dataTables settings object
- *  @memberof DataTable#oApi
- */
-function _fnBrowserDetect(settings) {
-	// We don't need to do this every time DataTables is constructed, the values
-	// calculated are specific to the browser and OS configuration which we
-	// don't expect to change between initialisations
-	if (!DataTable.__browser) {
-		var browser = {};
-		DataTable.__browser = browser;
-
-		// Scrolling feature / quirks detection
-		var n = $('<div/>')
-			.css({
-				position: 'fixed',
-				top: 0,
-				left: -1 * window.pageXOffset, // allow for scrolling
-				height: 1,
-				width: 1,
-				overflow: 'hidden'
-			})
-			.append(
-				$('<div/>')
-					.css({
-						position: 'absolute',
-						top: 1,
-						left: 1,
-						width: 100,
-						overflow: 'scroll'
-					})
-					.append(
-						$('<div/>')
-							.css({
-								width: '100%',
-								height: 10
-							})
-					)
-			)
-			.appendTo('body');
-
-		var outer = n.children();
-		var inner = outer.children();
-
-		// Get scrollbar width
-		browser.barWidth = outer[0].offsetWidth - outer[0].clientWidth;
-
-		// In rtl text layout, some browsers (most, but not all) will place the
-		// scrollbar on the left, rather than the right.
-		browser.bScrollbarLeft = Math.round(inner.offset().left) !== 1;
-
-		n.remove();
-	}
-
-	$.extend(settings.oBrowser, DataTable.__browser);
-	settings.oScroll.iBarWidth = DataTable.__browser.barWidth;
-}
-
 // #endregion
 // #region core.columns.js
 
@@ -1693,8 +1607,8 @@ function _fnAddColumn(oSettings) {
 	var oDefaults = DataTable.defaults.column;
 	var iCol = oSettings.aoColumns.length;
 	var oCol = $.extend({}, DataTable.models.oColumn, oDefaults, {
-		"aDataSort": oDefaults.aDataSort ? oDefaults.aDataSort : [iCol],
-		"mData": oDefaults.mData ? oDefaults.mData : iCol,
+		aDataSort: [iCol],
+		mData: iCol,
 		idx: iCol,
 		colEl: $('<col>').attr('data-dt-column', iCol)
 	});
@@ -1716,23 +1630,7 @@ function _fnColumnOptions(oSettings, iCol) {
 	var mDataSrc = oCol.mData;
 	var mData = _fnGetObjectDataFn(mDataSrc);
 
-	// The `render` option can be given as an array to access the helper rendering methods.
-	// The first element is the rendering method to use, the rest are the parameters to pass
-	if (oCol.mRender && Array.isArray(oCol.mRender)) {
-		var copy = oCol.mRender.slice();
-		var name = copy.shift();
-
-		oCol.mRender = DataTable.render[name].apply(window, copy);
-	}
-
-	oCol._render = oCol.mRender ? _fnGetObjectDataFn(oCol.mRender) : null;
-
-	var attrTest = function (src) {
-		return typeof src === 'string' && src.indexOf('@') !== -1;
-	};
-	oCol._bAttrSrc = $.isPlainObject(mDataSrc) && (
-		attrTest(mDataSrc.sort) || attrTest(mDataSrc.type) || attrTest(mDataSrc.filter)
-	);
+	oCol._render = null;
 	oCol._setter = null;
 
 	oCol.fnGetData = function (rowData, type, meta) {
@@ -1745,12 +1643,6 @@ function _fnColumnOptions(oSettings, iCol) {
 	oCol.fnSetData = function (rowData, val, meta) {
 		return _fnSetObjectDataFn(mDataSrc)(rowData, val, meta);
 	};
-
-	// Indicate if DataTables should read DOM data as an object or array
-	// Used in _fnGetRowElements
-	if (typeof mDataSrc !== 'number' && !oCol._isArrayHost) {
-		oSettings._rowReadObject = true;
-	}
 
 	/* Feature sorting overrides column specific when off */
 	if (!oSettings.oFeatures.bSort) {
@@ -1781,7 +1673,7 @@ function _fnColumnSizes(settings) {
 	var cols = settings.aoColumns;
 
 	for (var i = 0; i < cols.length; i++) {
-		var width = _fnColumnsSumWidth(settings, [i], false, false);
+		var width = _fnColumnsSumWidth(settings, [i], false);
 
 		// Need to set the min-width, otherwise the browser might try to collapse
 		// it further
@@ -2077,7 +1969,7 @@ function _fnApplyColumnDefs(oSettings, aoCols, fn) {
  * @param {*} incVisible Include visible columns (true) or not (false)
  * @returns Combined CSS value
  */
-function _fnColumnsSumWidth(settings, targets, original, incVisible) {
+function _fnColumnsSumWidth(settings, targets, original) {
 	if (!Array.isArray(targets)) {
 		targets = _fnColumnsFromHeader(targets);
 	}
@@ -2092,7 +1984,7 @@ function _fnColumnsSumWidth(settings, targets, original, incVisible) {
 			column.sWidthOrig :
 			column.sWidth;
 
-		if (!incVisible && column.bVisible === false) {
+		if (column.bVisible === false) {
 			continue;
 		}
 
@@ -2149,7 +2041,6 @@ function _fnAddData(settings, dataIn, tr, tds) {
 	/* Create the object for storing information about this new row */
 	var rowIdx = settings.aoData.length;
 	var rowModel = $.extend(true, {}, DataTable.models.oRow, {
-		src: tr ? 'dom' : 'data',
 		idx: rowIdx
 	});
 
@@ -2275,9 +2166,8 @@ function _fnGetCellData(settings, rowIdx, colIdx, type) {
  */
 function _fnWriteCell(td, val) {
 	if (val && typeof val === 'object' && val.nodeName) {
-		$(td)
-			.empty()
-			.append(val);
+		td.innerHTML = '';
+		td.appendChild(val);
 	}
 	else {
 		td.innerHTML = val;
@@ -2391,27 +2281,17 @@ function _fnGetRowElements(settings, row) {
 		col = columns[i];
 		contents = (cell.innerHTML).trim();
 
-		if (col && col._bAttrSrc) {
-			var setter = _fnSetObjectDataFn(col.mData._);
-			setter(d, contents);
-
-			attr(col.mData.sort, cell);
-			attr(col.mData.type, cell);
-			attr(col.mData.filter, cell);
+		// Depending on the `data` option for the columns the data can
+		// be read to either an object or an array.
+		if (objectRead) {
+			if (!col._setter) {
+				// Cache the setter function
+				col._setter = _fnSetObjectDataFn(col.mData);
+			}
+			col._setter(d, contents);
 		}
 		else {
-			// Depending on the `data` option for the columns the data can
-			// be read to either an object or an array.
-			if (objectRead) {
-				if (!col._setter) {
-					// Cache the setter function
-					col._setter = _fnSetObjectDataFn(col.mData);
-				}
-				col._setter(d, contents);
-			}
-			else {
-				d[i] = contents;
-			}
+			d[i] = contents;
 		}
 
 		i++;
@@ -2497,73 +2377,69 @@ function _fnCreateTr(oSettings, iRow, nTrIn, anTds) {
 		rowData = row._aData,
 		cells = [],
 		nTr, nTd, oCol,
-		i, iLen, create,
-		trClass = oSettings.oClasses.tbody.row;
+		create;
 
-	if (row.nTr === null) {
-		nTr = nTrIn || document.createElement('tr');
+	if (row.nTr !== null) {
+		return;
+	}
+	
+	nTr = nTrIn || document.createElement('tr');
 
-		row.nTr = nTr;
-		row.anCells = cells;
+	row.nTr = nTr;
+	row.anCells = cells;
 
-		_addClass(nTr, trClass);
+	/* Use a private property on the node to allow reserve mapping from the node
+	 * to the aoData array for fast look up
+	 */
+	nTr._DT_RowIndex = iRow;
 
-		/* Use a private property on the node to allow reserve mapping from the node
-		 * to the aoData array for fast look up
-		 */
-		nTr._DT_RowIndex = iRow;
+	/* Special parameters can be given by the data source to be used on the row */
+	_fnRowAttributes(oSettings, row);
 
-		/* Special parameters can be given by the data source to be used on the row */
-		_fnRowAttributes(oSettings, row);
+	/* Process each column */
+	for (let i = 0; i < oSettings.aoColumns.length; i++) {
+		oCol = oSettings.aoColumns[i];
+		create = nTrIn && anTds[i] ? false : true;
 
-		/* Process each column */
-		for (i = 0, iLen = oSettings.aoColumns.length; i < iLen; i++) {
-			oCol = oSettings.aoColumns[i];
-			create = nTrIn && anTds[i] ? false : true;
+		nTd = create ? document.createElement("td") : anTds[i];
 
-			nTd = create ? document.createElement("td") : anTds[i];
-
-			if (!nTd) {
-				_fnLog(oSettings, 0, 'Incorrect column count', 18);
-			}
-
-			nTd._DT_CellIndex = {
-				row: iRow,
-				column: i
-			};
-
-			cells.push(nTd);
-
-			var display = _fnGetRowDisplay(oSettings, iRow);
-
-			// Need to create the HTML if new, or if a rendering function is defined
-			if (
-				create ||
-				(
-					(oCol.mRender || oCol.mData !== i) &&
-					(!$.isPlainObject(oCol.mData) || oCol.mData._ !== i + '.display')
-				)
-			) {
-				_fnWriteCell(nTd, display[i]);
-			}
-
-			// column class
-			_addClass(nTd, oCol.sClass);
-
-			// Visibility - add or remove as required
-			if (oCol.bVisible && create) {
-				nTr.appendChild(nTd);
-			}
-			else if (!oCol.bVisible && !create) {
-				nTd.parentNode.removeChild(nTd);
-			}
+		if (!nTd) {
+			_fnLog(oSettings, 0, 'Incorrect column count', 18);
 		}
 
-		_fnCallbackFire(oSettings, 'aoRowCreatedCallback', 'row-created', [nTr, rowData, iRow, cells]);
+		nTd._DT_CellIndex = {
+			row: iRow,
+			column: i
+		};
+
+		cells.push(nTd);
+
+		var display = _fnGetRowDisplay(oSettings, iRow);
+
+		// Need to create the HTML if new, or if a rendering function is defined
+		if (
+			create ||
+			(
+				(oCol.mData !== i) &&
+				(!$.isPlainObject(oCol.mData) || oCol.mData._ !== i + '.display')
+			)
+		) {
+			_fnWriteCell(nTd, display[i]);
+		}
+
+		// column class
+		_addClass(nTd, oCol.sClass);
+
+		// Visibility - add or remove as required
+		if (oCol.bVisible && create) {
+			nTr.appendChild(nTd);
+		}
+		else if (!oCol.bVisible && !create) {
+			nTd.parentNode.removeChild(nTd);
+		}
 	}
-	else {
-		_addClass(row.nTr, trClass);
-	}
+
+	_fnCallbackFire(oSettings, 'aoRowCreatedCallback', 'row-created', [nTr, rowData, iRow, cells]);
 }
 
 
@@ -2675,8 +2551,8 @@ function _fnBuildHead(settings, side) {
  * @param {*} incColumns What columns should be included
  * @returns Layout array
  */
-function _fnHeaderLayout(settings, source, incColumns) {
-	var row, column, cell;
+function _fnHeaderLayout(settings, source) {
+	var cell;
 	var local = [];
 	var structure = [];
 	var columns = settings.aoColumns;
@@ -2688,15 +2564,13 @@ function _fnHeaderLayout(settings, source, incColumns) {
 	}
 
 	// Default is to work on only visible columns
-	if (!incColumns) {
-		incColumns = _range(columnCount)
-			.filter(function (idx) {
-				return columns[idx].bVisible;
-			});
-	}
+	var incColumns = _range(columnCount)
+		.filter(function (idx) {
+			return columns[idx].bVisible;
+		});
 
 	// Make a copy of the master layout array, but with only the columns we want
-	for (row = 0; row < source.length; row++) {
+	for (let row = 0; row < source.length; row++) {
 		// Remove any columns we haven't selected
 		local[row] = source[row].slice().filter(function (cell, i) {
 			return incColumns.includes(i);
@@ -2706,8 +2580,8 @@ function _fnHeaderLayout(settings, source, incColumns) {
 		structure.push([]);
 	}
 
-	for (row = 0; row < local.length; row++) {
-		for (column = 0; column < local[row].length; column++) {
+	for (let row = 0; row < local.length; row++) {
+		for (let column = 0; column < local[row].length; column++) {
 			rowspan = 1;
 			colspan = 1;
 
@@ -2840,7 +2714,6 @@ function _fnDraw(oSettings) {
 				var td = aoData.anCells[i];
 
 				_addClass(td, _ext.type.className[col.sType]); // auto class
-				_addClass(td, oSettings.oClasses.tbody.cell); // all cells
 			}
 
 			// Row callback functions - might want to manipulate the row
@@ -2956,7 +2829,7 @@ function _emptyRow(settings) {
 	return $('<tr/>')
 		.append($('<td />', {
 			'colSpan': _fnVisbleColumns(settings),
-			'class': settings.oClasses.empty.row
+			'class': 'dt-empty'
 		}).html(zero))[0];
 }
 
@@ -3183,18 +3056,15 @@ function _layoutResolve(settings, row) {
  *  @memberof DataTable#oApi
  */
 function _fnAddOptionsHtml(settings) {
-	var classes = settings.oClasses;
-	var table = $(settings.nTable);
+	var table = settings.nTable;
 
 	// Wrapper div around everything DataTables controls
-	var insert = $('<div/>')
-		.attr({
-			id: settings.sTableId + '_wrapper',
-			'class': classes.container
-		})
-		.insertBefore(table);
+	var insert = document.createElement('div');
+	insert.id = settings.sTableId + '_wrapper';
+	insert.className = 'dt-container';
+	table.parentNode.insertBefore(insert, table);
 
-	settings.nTableWrapper = insert[0];
+	settings.nTableWrapper = insert;
 
 	var top = _layoutArray(settings, 'top');
 	var bottom = _layoutArray(settings, 'bottom');
@@ -3531,7 +3401,7 @@ function _fnFilterData(settings) {
 	var columns = settings.aoColumns;
 	var data = settings.aoData;
 	var column;
-	var j, jen, filterData, cellData, row;
+	var filterData, cellData, row;
 	var wasInvalidated = false;
 
 	for (var rowIdx = 0; rowIdx < data.length; rowIdx++) {
@@ -3544,7 +3414,7 @@ function _fnFilterData(settings) {
 		if (!row._aFilterData) {
 			filterData = [];
 
-			for (j = 0, jen = columns.length; j < jen; j++) {
+			for (let j = 0; j < columns.length; j++) {
 				column = columns[j];
 
 				if (column.bSearchable) {
@@ -3744,7 +3614,6 @@ function _fnPageChange(settings, action) {
 	return changed;
 }
 
-
 // #endregion
 // #region core.processing.js
 
@@ -3853,7 +3722,7 @@ function _fnCalculateColumnWidths(settings) {
 	// Apply custom sizing to the cloned header
 	tmpTable.find('thead th, thead td').each(function () {
 		// Get the `width` from the header layout
-		var width = _fnColumnsSumWidth(settings, this, true, false);
+		var width = _fnColumnsSumWidth(settings, this, true);
 
 		if (width) {
 			// Need to set the width and min-width, otherwise the browser
@@ -4025,7 +3894,7 @@ function _fnStringToCss(s) {
  * @param {*} settings DT settings
  */
 function _colGroup(settings) {
-	var cols = settings.aoColumns;
+	var i, cols = settings.aoColumns;
 
 	settings.colgroup.empty();
 
@@ -4066,7 +3935,7 @@ function _fnSortAttachListener(settings, node, selector, column, callback) {
 
 		if (columns.length) {
 			for (var i = 0, ien = columns.length; i < ien; i++) {
-				var ret = _fnSortAdd(settings, columns[i], i, e.shiftKey);
+				var ret = _fnSortAdd(settings, columns[i]);
 
 				if (ret !== false) {
 					run = true;
@@ -4107,15 +3976,14 @@ function _fnSortDisplay(settings, display) {
 	var master = settings.aiDisplayMaster;
 	var masterMap = {};
 	var map = {};
-	var i;
 
 	// Rather than needing an `indexOf` on master array, we can create a map
-	for (i = 0; i < master.length; i++) {
+	for (let i = 0; i < master.length; i++) {
 		masterMap[master[i]] = i;
 	}
 
 	// And then cache what would be the indexOf fom the display
-	for (i = 0; i < display.length; i++) {
+	for (let i = 0; i < display.length; i++) {
 		map[display[i]] = masterMap[display[i]];
 	}
 
@@ -4168,7 +4036,6 @@ function _fnSortResolve(settings, nestedSort, sort) {
 
 function _fnSortFlatten(settings) {
 	var
-		i, k, kLen,
 		aSort = [],
 		extSort = DataTable.ext.type.order,
 		aoColumns = settings.aoColumns,
@@ -4184,13 +4051,13 @@ function _fnSortFlatten(settings) {
 
 	_fnSortResolve(settings, nestedSort, settings.aaSorting);
 
-	for (i = 0; i < nestedSort.length; i++) {
+	for (let i = 0; i < nestedSort.length; i++) {
 		srcCol = nestedSort[i][0];
 
 		if (aoColumns[srcCol]) {
 			aDataSort = aoColumns[srcCol].aDataSort;
 
-			for (k = 0, kLen = aDataSort.length; k < kLen; k++) {
+			for (let k = 0; k < aDataSort.length; k++) {
 				iCol = aDataSort[k];
 				sType = aoColumns[iCol].sType || 'string';
 
@@ -4223,7 +4090,6 @@ function _fnSortFlatten(settings) {
  */
 function _fnSort(oSettings, col, dir) {
 	var
-		i, ien, iLen,
 		aiOrig = [],
 		extSort = DataTable.ext.type.order,
 		aoData = oSettings.aoData,
@@ -4250,7 +4116,7 @@ function _fnSort(oSettings, col, dir) {
 		aSort = _fnSortFlatten(oSettings);
 	}
 
-	for (i = 0, ien = aSort.length; i < ien; i++) {
+	for (let i = 0; i < aSort.length; i++) {
 		sortCol = aSort[i];
 
 		// Load the data needed for the sort, for each cell
@@ -4260,7 +4126,7 @@ function _fnSort(oSettings, col, dir) {
 	/* No sorting required if server-side or no sorting array */
 	if (aSort.length !== 0) {
 		// Reset the initial positions on each pass so we get a stable sort
-		for (i = 0, iLen = displayMaster.length; i < iLen; i++) {
+		for (let i = 0; i < displayMaster.length; i++) {
 			aiOrig[i] = i;
 		}
 
@@ -4289,12 +4155,11 @@ function _fnSort(oSettings, col, dir) {
 		 */
 		displayMaster.sort(function (a, b) {
 			var
-				x, y, k, test, sort,
-				len = aSort.length,
+				x, y, test, sort,
 				dataA = aoData[a]._aSortData,
 				dataB = aoData[b]._aSortData;
 
-			for (k = 0; k < len; k++) {
+			for (let k = 0; k < aSort.length; k++) {
 				sort = aSort[k];
 
 				// Data, which may have already been through a `-pre` function
@@ -4326,12 +4191,6 @@ function _fnSort(oSettings, col, dir) {
 			return x < y ? -1 : x > y ? 1 : 0;
 		});
 	}
-	else if (aSort.length === 0) {
-		// Apply index order
-		displayMaster.sort(function (x, y) {
-			return x < y ? -1 : x > y ? 1 : 0;
-		});
-	}
 
 	if (col === undefined) {
 		// Tell the draw function that we have sorted the data
@@ -4344,7 +4203,6 @@ function _fnSort(oSettings, col, dir) {
 	return displayMaster;
 }
 
-
 /**
  * Function to run on user sort request
  *  @param {object} settings dataTables settings object
@@ -4355,7 +4213,7 @@ function _fnSort(oSettings, col, dir) {
  *  @param {function} [callback] callback function
  *  @memberof DataTable#oApi
  */
-function _fnSortAdd(settings, colIdx, addIndex, shift) {
+function _fnSortAdd(settings, colIdx) {
 	var col = settings.aoColumns[colIdx];
 	var sorting = settings.aaSorting;
 	var asSorting = col.asSorting;
@@ -4411,11 +4269,11 @@ function _fnSortingClasses(settings) {
 	var sortClass = settings.oClasses.order.position;
 	var sort = _fnSortFlatten(settings);
 	var features = settings.oFeatures;
-	var i, ien, colIdx;
+	var colIdx;
 
 	if (features.bSort) {
 		// Remove old sorting classes
-		for (i = 0, ien = oldSort.length; i < ien; i++) {
+		for (let i = 0; i < oldSort.length; i++) {
 			colIdx = oldSort[i].src;
 
 			// Remove column sorting
@@ -4424,7 +4282,7 @@ function _fnSortingClasses(settings) {
 		}
 
 		// Add new column sorting
-		for (i = 0, ien = sort.length; i < ien; i++) {
+		for (let i = 0; i < sort.length; i++) {
 			colIdx = sort[i].src;
 
 			$(_pluck(settings.aoData, 'anCells', colIdx))
@@ -4703,7 +4561,7 @@ function _fnLengthOverflow(settings) {
 
 function _fnRenderer(type) {
 	var host = DataTable.ext.renderer[type];
-	
+
 	// Use the default
 	return host._;
 }
@@ -6334,14 +6192,6 @@ DataTable.models.oRow = {
 	"_sFilterRow": null,
 
 	/**
-	 * Denote if the original data source was from the DOM, or the data source
-	 * object. This is used for invalidating data, so DataTables can
-	 * automatically read data from the original source, unless uninstructed
-	 * otherwise.
-	 */
-	"src": null,
-
-	/**
 	 * Index in the aoData array. This saves an indexOf lookup when we have the
 	 * object, but want to know the index
 	 */
@@ -6416,12 +6266,6 @@ DataTable.models.oColumn = {
 	"_sManualType": null,
 
 	/**
-	 * Flag to indicate if HTML5 data attributes should be used as the data
-	 * source for filtering or sorting. True is either are.
-	 */
-	"_bAttrSrc": false,
-
-	/**
 	 * Function to get data from a cell in a column. You should <b>never</b>
 	 * access data directly through _aData internally in DataTables - always use
 	 * the method attached to this property. It allows mData to function as
@@ -6444,14 +6288,6 @@ DataTable.models.oColumn = {
 	 * function is given then the return from the function is used.
 	 */
 	"mData": null,
-
-	/**
-	 * Partner property to mData which is used (only when defined) to get
-	 * the data - i.e. it is basically the same as mData, but without the
-	 * 'set' option, and also the data fed to it is the result from mData.
-	 * This is the rendering method to match the data method of mData.
-	 */
-	"mRender": null,
 
 	/**
 	 * The class to apply to all TD elements in the table's TBODY for the column
@@ -6886,59 +6722,6 @@ DataTable.defaults.column = {
 
 
 	/**
-	 * This property is the rendering partner to `data` and it is suggested that
-	 * when you want to manipulate data for display (including filtering,
-	 * sorting etc) without altering the underlying data for the table, use this
-	 * property. `render` can be considered to be the the read only companion to
-	 * `data` which is read / write (then as such more complex). Like `data`
-	 * this option can be given in a number of different ways to effect its
-	 * behaviour:
-	 *
-	 * * `integer` - treated as an array index for the data source. This is the
-	 *   default that DataTables uses (incrementally increased for each column).
-	 * * `string` - read an object property from the data source. There are
-	 *   three 'special' options that can be used in the string to alter how
-	 *   DataTables reads the data from the source object:
-	 *    * `.` - Dotted Javascript notation. Just as you use a `.` in
-	 *      Javascript to read from nested objects, so to can the options
-	 *      specified in `data`. For example: `browser.version` or
-	 *      `browser.name`. If your object parameter name contains a period, use
-	 *      `\\` to escape it - i.e. `first\\.name`.
-	 *    * `[]` - Array notation. DataTables can automatically combine data
-	 *      from and array source, joining the data with the characters provided
-	 *      between the two brackets. For example: `name[, ]` would provide a
-	 *      comma-space separated list from the source array. If no characters
-	 *      are provided between the brackets, the original array source is
-	 *      returned.
-	 *    * `()` - Function notation. Adding `()` to the end of a parameter will
-	 *      execute a function of the name given. For example: `browser()` for a
-	 *      simple function on the data source, `browser.version()` for a
-	 *      function in a nested property or even `browser().version` to get an
-	 *      object property if the function called returns an object.
-	 * * `object` - use different data for the different data types requested by
-	 *   DataTables ('filter', 'display', 'type' or 'sort'). The property names
-	 *   of the object is the data type the property refers to and the value can
-	 *   defined using an integer, string or function using the same rules as
-	 *   `render` normally does. Note that an `_` option _must_ be specified.
-	 *   This is the default value to use if you haven't specified a value for
-	 *   the data type requested by DataTables.
-	 * * `function` - the function given will be executed whenever DataTables
-	 *   needs to set or get the data for a cell in the column. The function
-	 *   takes three parameters:
-	 *    * Parameters:
-	 *      * {array|object} The data source for the row (based on `data`)
-	 *      * {string} The type call data requested - this will be 'filter',
-	 *        'display', 'type' or 'sort'.
-	 *      * {array|object} The full data source for the row (not based on
-	 *        `data`)
-	 *    * Return:
-	 *      * The return value from the function is what will be used for the
-	 *        data requested.
-	 */
-	"mRender": null,
-
-
-	/**
 	 * Class to give to each cell in this column.
 	 */
 	"sClass": "",
@@ -7046,18 +6829,6 @@ DataTable.models.oSettings = {
 		"bSort": null,
 	},
 
-
-	/**
-	 * Scrolling settings for a table.
-	 */
-	"oScroll": {
-		/**
-		 * Width of the scrollbar for the web-browser's platform. Calculated
-		 * during table initialisation.
-		 */
-		"iBarWidth": 0,
-	},
-
 	/**
 	 * Language information for the table.
 	 */
@@ -7068,17 +6839,6 @@ DataTable.models.oSettings = {
 	 * Browser support parameters
 	 */
 	"oBrowser": {
-		/**
-		 * Determine if the vertical scrollbar is on the right or left of the
-		 * scrolling container - needed for rtl language layout, although not
-		 * all browsers move the scrollbar (Safari).
-		 */
-		"bScrollbarLeft": false,
-
-		/**
-		 * Browser scrollbar width
-		 */
-		"barWidth": 0
 	},
 
 
@@ -7598,344 +7358,6 @@ var _filterString = function (stripHtml, normalize) {
 }
 
 // #endregion
-// #region ext.helpers.js
-
-/*
- * Public helper functions. These aren't used internally by DataTables, or
- * called by any of the options passed into DataTables, but they can be used
- * externally by developers working with DataTables. They are helper functions
- * to make working with DataTables a little bit easier.
- */
-
-/**
- * Common logic for moment, luxon or a date action.
- *
- * Happens after __mldObj, so don't need to call `resolveWindowsLibs` again
- */
-function __mld(dtLib, momentFn, luxonFn, dateFn, arg1) {
-	if (__moment) {
-		return dtLib[momentFn](arg1);
-	}
-	else if (__luxon) {
-		return dtLib[luxonFn](arg1);
-	}
-
-	return dateFn ? dtLib[dateFn](arg1) : dtLib;
-}
-
-
-var __mlWarning = false;
-var __luxon; // Can be assigned in DateTeble.use()
-var __moment; // Can be assigned in DateTeble.use()
-
-/**
- * 
- */
-function resolveWindowLibs() {
-	if (window.luxon && !__luxon) {
-		__luxon = window.luxon;
-	}
-
-	if (window.moment && !__moment) {
-		__moment = window.moment;
-	}
-}
-
-function __mldObj(d, format, locale) {
-	var dt;
-
-	resolveWindowLibs();
-
-	if (__moment) {
-		dt = __moment.utc(d, format, locale, true);
-
-		if (!dt.isValid()) {
-			return null;
-		}
-	}
-	else if (__luxon) {
-		dt = format && typeof d === 'string'
-			? __luxon.DateTime.fromFormat(d, format)
-			: __luxon.DateTime.fromISO(d);
-
-		if (!dt.isValid) {
-			return null;
-		}
-
-		dt.setLocale(locale);
-	}
-	else if (!format) {
-		// No format given, must be ISO
-		dt = new Date(d);
-	}
-	else {
-		if (!__mlWarning) {
-			alert('DataTables warning: Formatted date without Moment.js or Luxon - https://datatables.net/tn/17');
-		}
-
-		__mlWarning = true;
-	}
-
-	return dt;
-}
-
-// Wrapper for date, datetime and time which all operate the same way with the exception of
-// the output string for auto locale support
-function __mlHelper(localeString) {
-	return function (from, to, locale, def) {
-		// Luxon and Moment support
-		// Argument shifting
-		if (arguments.length === 0) {
-			locale = 'en';
-			to = null; // means toLocaleString
-			from = null; // means iso8601
-		}
-		else if (arguments.length === 1) {
-			locale = 'en';
-			to = from;
-			from = null;
-		}
-		else if (arguments.length === 2) {
-			locale = to;
-			to = from;
-			from = null;
-		}
-
-		var typeName = 'datetime' + (to ? '-' + to : '');
-
-		// Add type detection and sorting specific to this date format - we need to be able to identify
-		// date type columns as such, rather than as numbers in extensions. Hence the need for this.
-		if (!DataTable.ext.type.order[typeName]) {
-			DataTable.type(typeName, {
-				detect: function (d) {
-					// The renderer will give the value to type detect as the type!
-					return d === typeName ? typeName : false;
-				},
-				order: {
-					pre: function (d) {
-						// The renderer gives us Moment, Luxon or Date obects for the sorting, all of which have a
-						// `valueOf` which gives milliseconds epoch
-						return d.valueOf();
-					}
-				},
-				className: 'dt-right'
-			});
-		}
-
-		return function (d, type) {
-			// Allow for a default value
-			if (d === null || d === undefined) {
-				if (def === '--now') {
-					// We treat everything as UTC further down, so no changes are
-					// made, as such need to get the local date / time as if it were
-					// UTC
-					var local = new Date();
-					d = new Date(Date.UTC(
-						local.getFullYear(), local.getMonth(), local.getDate(),
-						local.getHours(), local.getMinutes(), local.getSeconds()
-					));
-				}
-				else {
-					d = '';
-				}
-			}
-
-			if (type === 'type') {
-				// Typing uses the type name for fast matching
-				return typeName;
-			}
-
-			if (d === '') {
-				return type !== 'sort'
-					? ''
-					: __mldObj('0000-01-01 00:00:00', null, locale);
-			}
-
-			// Shortcut. If `from` and `to` are the same, we are using the renderer to
-			// format for ordering, not display - its already in the display format.
-			if (to !== null && from === to && type !== 'sort' && type !== 'type' && !(d instanceof Date)) {
-				return d;
-			}
-
-			var dt = __mldObj(d, from, locale);
-
-			if (dt === null) {
-				return d;
-			}
-
-			if (type === 'sort') {
-				return dt;
-			}
-
-			var formatted = to === null
-				? __mld(dt, 'toDate', 'toJSDate', '')[localeString]()
-				: __mld(dt, 'format', 'toFormat', 'toISOString', to);
-
-			// XSS protection
-			return type === 'display' ?
-				_escapeHtml(formatted) :
-				formatted;
-		};
-	}
-}
-
-// Based on locale, determine standard number formatting
-// Fallback for legacy browsers is US English
-var __thousands = ',';
-var __decimal = '.';
-
-if (window.Intl !== undefined) {
-	try {
-		var num = new Intl.NumberFormat().formatToParts(100000.1);
-
-		for (var i = 0; i < num.length; i++) {
-			if (num[i].type === 'group') {
-				__thousands = num[i].value;
-			}
-			else if (num[i].type === 'decimal') {
-				__decimal = num[i].value;
-			}
-		}
-	}
-	catch (e) {
-		// noop
-	}
-}
-
-// Formatted date time detection - use by declaring the formats you are going to use
-DataTable.datetime = function (format, locale) {
-	var typeName = 'datetime-' + format;
-
-	if (!locale) {
-		locale = 'en';
-	}
-
-	if (!DataTable.ext.type.order[typeName]) {
-		DataTable.type(typeName, {
-			detect: function (d) {
-				var dt = __mldObj(d, format, locale);
-				return d === '' || dt ? typeName : false;
-			},
-			order: {
-				pre: function (d) {
-					return __mldObj(d, format, locale) || 0;
-				}
-			},
-			className: 'dt-right'
-		});
-	}
-}
-
-/**
- * Helpers for `columns.render`.
- *
- * The options defined here can be used with the `columns.render` initialisation
- * option to provide a display renderer. The following functions are defined:
- *
- * * `moment` - Uses the MomentJS library to convert from a given format into another.
- * This renderer has three overloads:
- *   * 1 parameter:
- *     * `string` - Format to convert to (assumes input is ISO8601 and locale is `en`)
- *   * 2 parameters:
- *     * `string` - Format to convert from
- *     * `string` - Format to convert to. Assumes `en` locale
- *   * 3 parameters:
- *     * `string` - Format to convert from
- *     * `string` - Format to convert to
- *     * `string` - Locale
- * * `number` - Will format numeric data (defined by `columns.data`) for
- *   display, retaining the original unformatted data for sorting and filtering.
- *   It takes 5 parameters:
- *   * `string` - Thousands grouping separator
- *   * `string` - Decimal point indicator
- *   * `integer` - Number of decimal points to show
- *   * `string` (optional) - Prefix.
- *   * `string` (optional) - Postfix (/suffix).
- * * `text` - Escape HTML to help prevent XSS attacks. It has no optional
- *   parameters.
- *
- * @example
- *   // Column definition using the number renderer
- *   {
- *     data: "salary",
- *     render: $.fn.dataTable.render.number( '\'', '.', 0, '$' )
- *   }
- *
- * @namespace
- */
-DataTable.render = {
-	date: __mlHelper('toLocaleDateString'),
-	datetime: __mlHelper('toLocaleString'),
-	time: __mlHelper('toLocaleTimeString'),
-	number: function (thousands, decimal, precision, prefix, postfix) {
-		// Auto locale detection
-		if (thousands === null || thousands === undefined) {
-			thousands = __thousands;
-		}
-
-		if (decimal === null || decimal === undefined) {
-			decimal = __decimal;
-		}
-
-		return {
-			display: function (d) {
-				if (typeof d !== 'number' && typeof d !== 'string') {
-					return d;
-				}
-
-				if (d === '' || d === null) {
-					return d;
-				}
-
-				var negative = d < 0 ? '-' : '';
-				var flo = parseFloat(d);
-				var abs = Math.abs(flo);
-
-				// Scientific notation for large and small numbers
-				if (abs >= 100000000000 || (abs < 0.0001 && abs !== 0)) {
-					var exp = flo.toExponential(precision).split(/e\+?/);
-					return exp[0] + ' x 10<sup>' + exp[1] + '</sup>';
-				}
-
-				// If NaN then there isn't much formatting that we can do - just
-				// return immediately, escaping any HTML (this was supposed to
-				// be a number after all)
-				if (isNaN(flo)) {
-					return _escapeHtml(d);
-				}
-
-				flo = flo.toFixed(precision);
-				d = Math.abs(flo);
-
-				var intPart = parseInt(d, 10);
-				var floatPart = precision ?
-					decimal + (d - intPart).toFixed(precision).substring(2) :
-					'';
-
-				// If zero, then can't have a negative prefix
-				if (intPart === 0 && parseFloat(floatPart) === 0) {
-					negative = '';
-				}
-
-				return negative + (prefix || '') +
-					intPart.toString().replace(
-						/\B(?=(\d{3})+(?!\d))/g, thousands
-					) +
-					floatPart +
-					(postfix || '');
-			}
-		};
-	},
-
-	text: function () {
-		return {
-			display: _escapeHtml,
-			filter: _escapeHtml
-		};
-	}
-};
-
-// #endregion
 // #region ext.types.js
 
 var _extTypes = DataTable.ext.type;
@@ -8378,20 +7800,21 @@ $.extend(true, DataTable.ext.renderer, {
 	layout: {
 		_: function (settings, container, items) {
 			var classes = settings.oClasses.layout;
-			var row = $('<div/>')
-				.attr('id', items.id || null)
-				.addClass(items.className || classes.row)
-				.appendTo(container);
 
-			$.each(items, function (key, val) {
+			var row = document.createElement('div');
+			row.id = items.id || null;
+			row.className = items.className || classes.row;
+			container.appendChild(row);
+
+			for (const [key, val] of Object.entries(items)) {
 				if (key === 'id' || key === 'className') {
-					return;
+					continue;
 				}
 
 				var klass = '';
 
 				if (val.table) {
-					row.addClass(classes.tableRow);
+					row.classList.add(classes.tableRow);
 					klass += classes.tableCell + ' ';
 				}
 
@@ -8414,7 +7837,7 @@ $.extend(true, DataTable.ext.renderer, {
 					})
 					.append(val.contents)
 					.appendTo(row);
-			});
+			}
 		}
 	}
 });
@@ -8665,15 +8088,15 @@ DataTable.feature.register('paging', function (settings, opts) {
 		numbers: true
 	}, opts);
 
-	var host = $('<div/>')
-		.addClass(settings.oClasses.paging.container)
-		.append(
-			$('<nav>')
-				.attr('aria-label', 'pagination')
-				.addClass(settings.oClasses.paging.nav)
-		);
+	// create the host element for the controls
+	const host = document.createElement('div');
+	host.classList.add('dt-paging');
+	const nav = document.createElement('nav');
+	nav.setAttribute('aria-label', 'pagination');
+	host.appendChild(nav);
+
 	var draw = function () {
-		_pagingDraw(settings, host.children(), opts);
+		_pagingDraw(settings, host.children, opts);
 	};
 
 	settings.aoDrawCallback.push(draw);
@@ -8709,6 +8132,8 @@ function _pagingDynamic(opts) {
 }
 
 function _pagingDraw(settings, host, opts) {
+	host = $(host);
+
 	if (!settings._bInitComplete) {
 		return;
 	}
@@ -8963,28 +8388,11 @@ DataTable.feature.register('pageLength', function (settings, opts) {
 		tableId = settings.sTableId,
 		menu = opts.menu,
 		lengths = [],
-		language = [],
-		i;
+		language = [];
 
-	// Options can be given in a number of ways
-	if (Array.isArray(menu[0])) {
-		// Old 1.x style - 2D array
-		lengths = menu[0];
-		language = menu[1];
-	}
-	else {
-		for (i = 0; i < menu.length; i++) {
-			// An object with different label and value
-			if ($.isPlainObject(menu[i])) {
-				lengths.push(menu[i].value);
-				language.push(menu[i].label);
-			}
-			else {
-				// Or just a number to display and use
-				lengths.push(menu[i]);
-				language.push(menu[i]);
-			}
-		}
+	for (let i = 0; i < menu.length; i++) {
+		lengths.push(menu[i]);
+		language.push(menu[i]);
 	}
 
 	// We can put the <select> outside of the label if it is at the start or
@@ -8993,33 +8401,31 @@ DataTable.feature.register('pageLength', function (settings, opts) {
 	var end = opts.text.match(/_MENU_$/);
 	var start = opts.text.match(/^_MENU_/);
 	var removed = opts.text.replace(/_MENU_/, '');
-	var str = '<label>' + opts.text + '</label>';
 
+	var str = `<label>${opts.text}</label>`;
 	if (start) {
-		str = '_MENU_<label>' + removed + '</label>';
+		str = `_MENU_<label>${removed}</label>`;
 	}
 	else if (end) {
-		str = '<label>' + removed + '</label>_MENU_';
+		str = `<label>${removed}</label>_MENU_`;
 	}
 
 	// Wrapper element - use a span as a holder for where the select will go
-	var tmpId = 'tmp-' + (+new Date())
-	var div = $('<div/>')
-		.addClass(classes.container)
-		.append(
-			str.replace('_MENU_', '<span id="' + tmpId + '"></span>')
-		);
+	var tmpId = `tmp-` + (+new Date())
+	var div = document.createElement('div');
+	div.classList.add(classes.container);
+	div.innerHTML = str.replace('_MENU_', `<span id="${tmpId}"></span>`);
 
 	// Save text node content for macro updating
 	var textNodes = [];
-	div.find('label')[0].childNodes.forEach(function (el) {
+	div.querySelector('label').childNodes.forEach(function (el) {
 		if (el.nodeType === Node.TEXT_NODE) {
 			textNodes.push({
 				el: el,
 				text: el.textContent
 			});
 		}
-	})
+	});
 
 	// Update the label text in case it has an entries value
 	var updateEntries = function (len) {
@@ -9029,45 +8435,41 @@ DataTable.feature.register('pageLength', function (settings, opts) {
 	}
 
 	// Next, the select itself, along with the options
-	var select = $('<select/>', {
-		'name': tableId + '_length',
-		'aria-controls': tableId,
-		'class': classes.select
-	});
+	const select = document.createElement('select');
+	select.setAttribute('name', tableId + '_length');
+	select.setAttribute('aria-controls', tableId);
+	select.className = classes.select;
 
-	for (i = 0; i < lengths.length; i++) {
-		select[0][i] = new Option(
-			typeof language[i] === 'number' ?
-				_formatNumber(language[i]) :
-				language[i],
+	for (let i = 0; i < lengths.length; i++) {
+		select[i] = new Option(
+			_formatNumber(language[i]),
 			lengths[i]
 		);
 	}
 
 	// add for and id to label and input
-	div.find('label').attr('for', 'dt-length-' + __lengthCounter);
-	select.attr('id', 'dt-length-' + __lengthCounter);
+	div.querySelector('label').setAttribute('for', 'dt-length-' + __lengthCounter);
+	select.id = 'dt-length-' + __lengthCounter;
 	__lengthCounter++;
 
 	// Swap in the select list
-	div.find('#' + tmpId).replaceWith(select);
+	div.querySelector('#' + tmpId).replaceWith(select);
 
 	// Can't use `select` variable as user might provide their own and the
 	// reference is broken by the use of outerHTML
-	$('select', div)
-		.val(settings._iDisplayLength)
-		.on('change.DT', function () {
-			_fnLengthChange(settings, $(this).val());
-			_fnDraw(settings);
-		});
+	select.value = settings._iDisplayLength;
+	select.addEventListener('change', function () {
+		_fnLengthChange(settings, this.value);
+		_fnDraw(settings);
+	});
 
 	// Update node value whenever anything changes the table's length
-	$(settings.nTable).on('length.dt.DT', function (e, s, len) {
-		if (settings === s) {
-			$('select', div).val(len);
+	settings.nTable.addEventListener('length.dt.DT', function (e) {
+		if (settings === e.detail.settings) {
+			div.querySelector('select').value = e.detail.len;
 
 			// Resolve plurals in the text for the new length
-			updateEntries(len);
+			updateEntries(e.detail.len);
 		}
 	});
 
