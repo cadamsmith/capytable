@@ -109,7 +109,7 @@ var DataTable = function (selector, options) {
 
 		// Apply the defaults and init options to make a single init object will all
 		// options defined from defaults and instance options.
-		oInit = _fnExtend($.extend(true, {}, defaults), oInit);
+		oInit = _fnExtend(defaults, oInit);
 
 
 		// Map the initialisation options onto the settings object
@@ -133,9 +133,9 @@ var DataTable = function (selector, options) {
 
 		$this.addClass(oClasses.table);
 
-		if (oSettings.iInitDisplayStart === undefined) {
+		if (oSettings.initDisplayStart === undefined) {
 			/* Display start point, taking into account the save saving */
-			oSettings.iInitDisplayStart = 0;
+			oSettings.initDisplayStart = 0;
 			oSettings._displayStart = 0;
 		}
 
@@ -2418,15 +2418,15 @@ function _fnDetectHeader(settings, thead, write) {
  *  @param {object} oSettings dataTables settings object
  */
 function _fnStart(oSettings) {
-	var iInitDisplayStart = oSettings.iInitDisplayStart;
+	var initDisplayStart = oSettings.initDisplayStart;
 
 	// Check and see if we have an initial draw position from state saving
-	if (iInitDisplayStart !== undefined && iInitDisplayStart !== -1) {
-		oSettings._displayStart = iInitDisplayStart >= oSettings.totalDisplayed()
+	if (initDisplayStart !== undefined && initDisplayStart !== -1) {
+		oSettings._displayStart = initDisplayStart >= oSettings.totalDisplayed()
 			? 0
-			: iInitDisplayStart;
+			: initDisplayStart;
 
-		oSettings.iInitDisplayStart = -1;
+		oSettings.initDisplayStart = -1;
 	}
 }
 
