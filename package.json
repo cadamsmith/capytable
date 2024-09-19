@@ -2,16 +2,21 @@
     "name": "capytable",
     "version": "0.1.0",
     "description": "A package for giving tables superpowers",
-    "keywords": ["typescript"],
+    "keywords": [
+        "typescript"
+    ],
     "homepage": "https://github.com/cadamsmith/capytable",
     "bugs": {
-      "url": "https://github.com/cadamsmith/capytable/issues"
+        "url": "https://github.com/cadamsmith/capytable/issues"
     },
     "author": "cadamsmith <cadamsmith.dev@gmail.com> (https://cadamsmith.dev)",
     "repository": {
-      "type": "git",
-      "url": "git+https://github.com/cadamsmith/capytable.git"
+        "type": "git",
+        "url": "git+https://github.com/cadamsmith/capytable.git"
     },
-    "files": ["dist"],
-    "type": "module"
-  }
+    "files": [
+        "dist"
+    ],
+    "type": "module",
+    "license": "MIT"
+}
