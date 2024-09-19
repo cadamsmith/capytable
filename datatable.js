@@ -243,12 +243,6 @@ DataTable.ext = _ext = {
 	 */
 	errMode: "alert",
 
-
-	/**
-	 * Legacy so v1 plug-ins don't throw js errors on load
-	 */
-	feature: [],
-
 	/**
 	 * Feature plug-ins.
 	 * 
@@ -256,67 +250,6 @@ DataTable.ext = _ext = {
 	 * to be initialised via the `layout` option.
 	 */
 	features: {},
-
-
-	/**
-	 * Row searching.
-	 * 
-	 * This method of searching is complimentary to the default type based
-	 * searching, and a lot more comprehensive as it allows you complete control
-	 * over the searching logic. Each element in this array is a function
-	 * (parameters described below) that is called for every row in the table,
-	 * and your logic decides if it should be included in the searching data set
-	 * or not.
-	 *
-	 * Searching functions have the following input parameters:
-	 *
-	 * 1. `{object}` DataTables settings object: see
-	 *    {@link DataTable.models.oSettings}
-	 * 2. `{array|object}` Data for the row to be processed (same as the
-	 *    original format that was passed in as the data source, or an array
-	 *    from a DOM data source
-	 * 3. `{int}` Row index ({@link DataTable.models.oSettings.data}), which
-	 *    can be useful to retrieve the `TR` element if you need DOM interaction.
-	 *
-	 * And the following return is expected:
-	 *
-	 * * {boolean} Include the row in the searched result set (true) or not
-	 *   (false)
-	 *
-	 * Note that as with the main search ability in DataTables, technically this
-	 * is "filtering", since it is subtractive. However, for consistency in
-	 * naming we call it searching here.
-	 *
-	 *  @type array
-	 *  @default []
-	 *
-	 *  @example
-	 *    // The following example shows custom search being applied to the
-	 *    // fourth column (i.e. the data[3] index) based on two input values
-	 *    // from the end-user, matching the data in a certain range.
-	 *    $.fn.dataTable.ext.search.push(
-	 *      function( settings, data, dataIndex ) {
-	 *        var min = document.getElementById('min').value * 1;
-	 *        var max = document.getElementById('max').value * 1;
-	 *        var version = data[3] == "-" ? 0 : data[3]*1;
-	 *
-	 *        if ( min == "" && max == "" ) {
-	 *          return true;
-	 *        }
-	 *        else if ( min == "" && version < max ) {
-	 *          return true;
-	 *        }
-	 *        else if ( min < version && "" == max ) {
-	 *          return true;
-	 *        }
-	 *        else if ( min < version && version < max ) {
-	 *          return true;
-	 *        }
-	 *        return false;
-	 *      }
-	 *    );
-	 */
-	search: [],
 
 
 	/**
@@ -347,24 +280,6 @@ DataTable.ext = _ext = {
 		cell: [],
 		column: [],
 		row: []
-	},
-
-
-	/**
-	 * Legacy configuration options. Enable and disable legacy options that
-	 * are available in DataTables.
-	 *
-	 *  @type object
-	 */
-	legacy: {
-		/**
-		 * Enable / disable DataTables 1.9 compatible server-side processing
-		 * requests
-		 *
-		 *  @type boolean
-		 *  @default null
-		 */
-		ajax: null
 	},
 
 
@@ -417,52 +332,8 @@ DataTable.ext = _ext = {
 
 
 	renderer: {
-		pageButton: {},
 		header: {}
 	},
-
-
-	/**
-	 * Ordering plug-ins - custom data source
-	 * 
-	 * The extension options for ordering of data available here is complimentary
-	 * to the default type based ordering that DataTables typically uses. It
-	 * allows much greater control over the the data that is being used to
-	 * order a column, but is necessarily therefore more complex.
-	 * 
-	 * This type of ordering is useful if you want to do ordering based on data
-	 * live from the DOM (for example the contents of an 'input' element) rather
-	 * than just the static string that DataTables knows of.
-	 * 
-	 * The way these plug-ins work is that you create an array of the values you
-	 * wish to be ordering for the column in question and then return that
-	 * array. The data in the array much be in the index order of the rows in
-	 * the table (not the currently ordering order!). Which order data gathering
-	 * function is run here depends on the `dt-init columns.orderDataType`
-	 * parameter that is used for the column (if any).
-	 *
-	 * The functions defined take two parameters:
-	 *
-	 * 1. `{object}` DataTables settings object: see
-	 *    {@link DataTable.models.oSettings}
-	 * 2. `{int}` Target column index
-	 *
-	 * Each function is expected to return an array:
-	 *
-	 * * `{array}` Data for the column to be ordering upon
-	 *
-	 *  @type array
-	 *
-	 *  @example
-	 *    // Ordering using `input` node values
-	 *    $.fn.dataTable.ext.order['dom-text'] = function  ( settings, col )
-	 *    {
-	 *      return this.api().column( col, {order:'index'} ).nodes().map( function ( td, i ) {
-	 *        return $('input', td).val();
-	 *      } );
-	 *    }
-	 */
-	order: {},
 
 
 	/**
@@ -643,21 +514,6 @@ DataTable.ext = _ext = {
 	 */
 	_unique: 0,
 };
-
-
-//
-// Backwards compatibility. Alias to pre 1.10 Hungarian notation counter parts
-//
-$.extend(_ext, {
-	afnFiltering: _ext.search,
-	aTypes: _ext.type.detect,
-	ofnSearch: _ext.type.search,
-	oSort: _ext.type.order,
-	afnSortData: _ext.order,
-	oStdClasses: _ext.classes,
-	oPagination: _ext.pager
-});
-
 
 // #endregion
 // #region ext.classes.js
@@ -1278,15 +1134,12 @@ function _fnColumnOptions(oSettings, iCol) {
 	var mDataSrc = oCol.data;
 	var mData = _fnGetObjectDataFn(mDataSrc);
 
-	oCol._render = null;
 	oCol._setter = null;
 
 	oCol.getData = function (rowData, type, meta) {
 		var innerData = mData(rowData, type, undefined, meta);
 
-		return oCol._render && type ?
-			oCol._render(innerData, type, rowData, meta) :
-			innerData;
+		return innerData;
 	};
 
 	/* Feature sorting overrides column specific when off */
@@ -2053,7 +1906,6 @@ function _fnDraw(oSettings) {
 
 			// Add various classes as needed
 			for (var i = 0; i < columns.length; i++) {
-				var col = columns[i];
 				var td = data.anCells[i];
 
 				_addClass(td, _ext.type.className['string']); // auto class
@@ -2373,16 +2225,12 @@ function _fnFilter(searchRows, settings, input) {
 
 	var matched = [];
 
-	// Search term can be a function, regex or string - if a string we apply our
-	// smart filtering regex (assuming the options require that)
-	var rpSearch = _fnFilterCreateSearch(input);
-
 	// Then for each row, does the test pass. If not, lop the row from the array
 	for (let i = 0; i < searchRows.length; i++) {
 		var row = settings.data[searchRows[i]];
-		var data = row._sFilterRow;
+		var data = row._filterRow;
 
-		if (rpSearch && rpSearch.test(data)) {
+		if (data.includes(input)) {
 			matched.push(searchRows[i]);
 		}
 	}
@@ -2394,89 +2242,6 @@ function _fnFilter(searchRows, settings, input) {
 		searchRows[i] = matched[i];
 	}
 }
-
-
-/**
- * Build a regular expression object suitable for searching a table
- *  @param {string} sSearch string to search for
- *  @returns {RegExp} constructed object
- *  @memberof DataTable#oApi
- */
-function _fnFilterCreateSearch(search) {
-	var not = [];
-
-	if (typeof search !== 'string') {
-		search = search.toString();
-	}
-
-	// Remove diacritics if normalize is set up to do so
-	search = _normalize(search);
-
-	search = _fnEscapeRegex(search);
-
-	/* For smart filtering we want to allow the search to work regardless of
-	 * word order. We also want double quoted text to be preserved, so word
-	 * order is important - a la google. And a negative look around for
-	 * finding rows which don't contain a given string.
-	 * 
-	 * So this is the sort of thing we want to generate:
-	 * 
-	 * ^(?=.*?\bone\b)(?=.*?\btwo three\b)(?=.*?\bfour\b).*$
-	 */
-	var parts = search.match(/!?["\u201C][^"\u201D]+["\u201D]|[^ ]+/g) || [''];
-	var a = parts.map(function (word) {
-		var negative = false;
-		var m;
-
-		// Determine if it is a "does not include"
-		if (word.charAt(0) === '!') {
-			negative = true;
-			word = word.substring(1);
-		}
-
-		// Strip the quotes from around matched phrases
-		if (word.charAt(0) === '"') {
-			m = word.match(/^"(.*)"$/);
-			word = m ? m[1] : word;
-		}
-		else if (word.charAt(0) === '\u201C') {
-			// Smart quote match (iPhone users)
-			m = word.match(/^\u201C(.*)\u201D$/);
-			word = m ? m[1] : word;
-		}
-
-		// For our "not" case, we need to modify the string that is
-		// allowed to match at the end of the expression.
-		if (negative) {
-			if (word.length > 1) {
-				not.push('(?!' + word + ')');
-			}
-
-			word = '';
-		}
-
-		return word.replace(/"/g, '');
-	});
-
-	var match = not.length
-		? not.join('')
-		: '';
-
-	var boundary = '';
-
-	search = '^(?=.*?' + boundary + a.join(')(?=.*?' + boundary) + ')(' + match + '.)*$';
-
-	return new RegExp(search, 'i');
-}
-
-
-/**
- * Escape a string such that it can be used in a regular expression
- *  @param {string} sVal string to escape
- *  @returns {string} escaped string
- *  @memberof DataTable#oApi
- */
-var _fnEscapeRegex = DataTable.util.escapeRegex;
 
 var __filter_div = $('<div>')[0];
 var __filter_div_textContent = __filter_div.textContent !== undefined;
@@ -2496,7 +2261,7 @@ function _fnFilterData(settings) {
 
 		row = data[rowIdx];
 
-		if (!row._aFilterData) {
+		if (!row._filterData) {
 			filterData = [];
 
 			for (let j = 0; j < columns.length; j++) {
@@ -2536,8 +2301,8 @@ function _fnFilterData(settings) {
 				filterData.push(cellData);
 			}
 
-			row._aFilterData = filterData;
-			row._sFilterRow = filterData.join('  ');
+			row._filterData = filterData;
+			row._filterRow = filterData.join('  ');
 			wasInvalidated = true;
 		}
 	}
@@ -2983,12 +2748,6 @@ function _fnSortInit(settings) {
 		+ ' td' + notSelector;
 
 	_fnSortAttachListener(settings, target, selector);
-
-	// Need to resolve the user input array into our internal structure
-	var order = [];
-	_fnSortResolve(order, settings.order);
-
-	settings.order = order;
 }
 
 
@@ -3053,17 +2812,6 @@ function _fnSortDisplay(settings, display) {
 	});
 }
 
-
-function _fnSortResolve(nestedSort, sort) {
-	if (sort.length) {
-		// 2D array
-		for (var z = 0; z < sort.length; z++) {
-			nestedSort.push(sort[z]);
-		}
-	}
-}
-
-
 function _fnSortFlatten(settings) {
 	var
 		aSort = [],
@@ -3078,8 +2826,7 @@ function _fnSortFlatten(settings) {
 
 	// Build the sort array, with pre-fix and post-fix options if they have been
 	// specified
-
-	_fnSortResolve(nestedSort, settings.order);
+	nestedSort = [...settings.order];
 
 	for (let i = 0; i < nestedSort.length; i++) {
 		srcCol = nestedSort[i][0];
@@ -3181,8 +2928,8 @@ function _fnSort(oSettings, col, dir) {
 		displayMaster.sort(function (a, b) {
 			var
 				x, y, test, sort,
-				dataA = data[a]._aSortData,
-				dataB = data[b]._aSortData;
+				dataA = data[a]._sortData,
+				dataB = data[b]._sortData;
 
 			for (let k = 0; k < aSort.length; k++) {
 				sort = aSort[k];
@@ -3191,22 +2938,11 @@ function _fnSort(oSettings, col, dir) {
 				x = dataA[sort.col];
 				y = dataB[sort.col];
 
-				if (sort.sorter) {
-					// If there is a custom sorter (`-asc` or `-desc`) for this
-					// data type, use it
-					test = sort.sorter(x, y);
+				// Otherwise, use generic sorting
+				test = x < y ? -1 : x > y ? 1 : 0;
 
-					if (test !== 0) {
-						return test;
-					}
-				}
-				else {
-					// Otherwise, use generic sorting
-					test = x < y ? -1 : x > y ? 1 : 0;
-
-					if (test !== 0) {
-						return sort.dir === 'asc' ? test : -test;
-					}
+				if (test !== 0) {
+					return sort.dir === 'asc' ? test : -test;
 				}
 			}
 
@@ -3334,14 +3070,14 @@ function _fnSortData(settings, colIdx) {
 
 		row = data[rowIdx];
 
-		if (!row._aSortData) {
-			row._aSortData = [];
+		if (!row._sortData) {
+			row._sortData = [];
 		}
 
-		if (!row._aSortData[colIdx]) {
+		if (!row._sortData[colIdx]) {
 			cellData = _fnGetCellData(settings, rowIdx, colIdx, 'sort');
 
-			row._aSortData[colIdx] = formatter ?
+			row._sortData[colIdx] = formatter ?
 				formatter(cellData, settings) :
 				cellData;
 		}
@@ -4642,21 +4378,21 @@ DataTable.models.oRow = {
 	 * per sort. This array should not be read from or written to by anything
 	 * other than the master sorting methods.
 	 */
-	"_aSortData": null,
+	"_sortData": null,
 
 	/**
 	 * Per cell filtering data cache. As per the sort data cache, used to
 	 * increase the performance of the filtering in DataTables
 	 */
-	"_aFilterData": null,
+	"_filterData": null,
 
 	/**
 	 * Filtering data cache. This is the same as the cell filtering cache, but
 	 * in this case a string rather than an array. This is easily computed with
-	 * a join on `_aFilterData`, but is provided as a cache so the join isn't
+	 * a join on `_filterData`, but is provided as a cache so the join isn't
 	 * needed on every search (memory traded for performance)
 	 */
-	"_sFilterRow": null,
+	"_filterRow": null,
 
 	/**
 	 * Index in the data array. This saves an indexOf lookup when we have the
@@ -5361,32 +5097,8 @@ var extPagination = DataTable.ext.pager;
 
 // Paging buttons configuration
 $.extend(extPagination, {
-	simple: function () {
-		return ['previous', 'next'];
-	},
-
 	full: function () {
 		return ['first', 'previous', 'next', 'last'];
-	},
-
-	numbers: function () {
-		return ['numbers'];
-	},
-
-	simple_numbers: function () {
-		return ['previous', 'numbers', 'next'];
-	},
-
-	full_numbers: function () {
-		return ['first', 'previous', 'numbers', 'next', 'last'];
-	},
-
-	first_last: function () {
-		return ['first', 'last'];
-	},
-
-	first_last_numbers: function () {
-		return ['first', 'numbers', 'last'];
 	},
 
 	// For testing and plug-ins to use
@@ -5429,13 +5141,6 @@ $.extend(true, DataTable.ext.renderer, {
 			}
 		}
 	},
-
-	pagingContainer: {
-		_: function (settings, buttons) {
-			// No wrapping element - just append directly to the host
-			return buttons;
-		}
-	}
 });
 
 // #endregion
@@ -5584,43 +5289,10 @@ DataTable.type('string', {
 });
 
 // #endregion
-// #region ext.sorting.js
-
-
-var __numericReplace = function (d, re1, re2) {
-	if (d !== 0 && (!d || d === '-')) {
-		return -Infinity;
-	}
-
-	var type = typeof d;
-
-	if (type === 'number' || type === 'bigint') {
-		return d;
-	}
-
-	if (d.replace) {
-		if (re1) {
-			d = d.replace(re1, '');
-		}
-
-		if (re2) {
-			d = d.replace(re2, '');
-		}
-	}
-
-	return d * 1;
-};
-
-// #endregion
 // #region ext.renderer.js
 
 
 $.extend(true, DataTable.ext.renderer, {
-	footer: {
-		_: function (settings, cell, classes) {
-		}
-	},
-
 	header: {
 		_: function (settings, cell, classes) {
 			if (!settings.features.ordering) {
@@ -5773,15 +5445,8 @@ $.extend(true, DataTable.ext.renderer, {
 DataTable.feature = {};
 
 // Third parameter is internal only!
-DataTable.feature.register = function (name, cb, legacy) {
+DataTable.feature.register = function (name, cb) {
 	DataTable.ext.features[name] = cb;
-
-	if (legacy) {
-		_ext.feature.push({
-			cFeature: legacy,
-			fnInit: cb
-		});
-	}
 };
 
 // #endregion
@@ -6123,13 +5788,9 @@ function _pagingDraw(settings, host, opts) {
 		buttonEls.push(btn.display);
 	}
 
-	var wrapped = _fnRenderer('pagingContainer')(
-		settings, buttonEls
-	);
-
 	var activeEl = host.find(document.activeElement).data('dt-idx');
 
-	host.empty().append(wrapped);
+	host.empty().append(buttonEls);
 
 	if (activeEl !== undefined) {
 		host.find('[data-dt-idx=' + activeEl + ']').trigger('focus');
