@@ -177,15 +177,14 @@ var DataTable = function (selector, options) {
 
 
 		/*
-			* Table HTML init
-			* Cache the header, body and footer as required, creating them if needed
-			*/
+		* Table HTML init
+		* Cache the header, body and footer as required, creating them if needed
+		*/
 
 		if (thead.length === 0) {
 			thead = $('<thead/>').appendTo($this);
 		}
 		oSettings.tHeadElement = thead[0];
-		$('tr', thead).addClass(oClasses.thead.row);
 
 		var tbody = $this.children('tbody');
 		if (tbody.length === 0) {
@@ -200,7 +199,6 @@ var DataTable = function (selector, options) {
 			tfoot = $('<tfoot/>').appendTo($this);
 		}
 		oSettings.tFootElement = tfoot[0];
-		$('tr', tfoot).addClass(oClasses.tfoot.row);
 
 		// Copy the data index array
 		oSettings.display = oSettings.displayMaster.slice();
@@ -687,7 +685,6 @@ $.extend(DataTable.ext.classes, {
 		row: 'dt-layout-row',
 		cell: 'dt-layout-cell',
 		tableRow: 'dt-layout-table',
-		tableCell: '',
 		start: 'dt-layout-start',
 		end: 'dt-layout-end',
 		full: 'dt-layout-full'
@@ -724,24 +721,11 @@ $.extend(DataTable.ext.classes, {
 		input: 'dt-input'
 	},
 	table: 'dataTable',
-	tbody: {
-		cell: '',
-		row: ''
-	},
-	thead: {
-		cell: '',
-		row: ''
-	},
-	tfoot: {
-		cell: '',
-		row: ''
-	},
 	paging: {
 		active: 'current',
 		button: 'dt-paging-button',
 		container: 'dt-paging',
 		disabled: 'disabled',
-		nav: ''
 	}
 });
 
@@ -5665,14 +5649,11 @@ var __numericReplace = function (d, re1, re2) {
 $.extend(true, DataTable.ext.renderer, {
 	footer: {
 		_: function (settings, cell, classes) {
-			cell.addClass(classes.tfoot.cell);
 		}
 	},
 
 	header: {
 		_: function (settings, cell, classes) {
-			cell.addClass(classes.thead.cell);
-
 			if (!settings.features.ordering) {
 				cell.addClass(classes.order.none);
 			}
