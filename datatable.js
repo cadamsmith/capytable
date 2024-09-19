@@ -60,10 +60,10 @@ class DataTable {
 			}
 
 			/* If the element we are initialising has the same ID as a table which was previously
-				* initialised, but the table nodes don't match (from before) then we destroy the old
-				* instance by simply deleting it. This is under the assumption that the table has been
-				* destroyed by other methods. Anyone using non-id selectors will need to do this manually
-				*/
+			* initialised, but the table nodes don't match (from before) then we destroy the old
+			* instance by simply deleting it. This is under the assumption that the table has been
+			* destroyed by other methods. Anyone using non-id selectors will need to do this manually
+			*/
 			if (s.tableId == element.id) {
 				allSettings.splice(i, 1);
 				break;
@@ -309,7 +309,61 @@ DataTable.ext = _ext = {
 	 *  @type object
 	 *  @default {}
 	 */
-	classes: {},
+	classes: {
+		container: 'dt-container',
+		empty: {
+			row: 'dt-empty'
+		},
+		info: {
+			container: 'dt-info'
+		},
+		layout: {
+			row: 'dt-layout-row',
+			cell: 'dt-layout-cell',
+			tableRow: 'dt-layout-table',
+			start: 'dt-layout-start',
+			end: 'dt-layout-end',
+			full: 'dt-layout-full'
+		},
+		length: {
+			container: 'dt-length',
+			select: 'dt-input'
+		},
+		order: {
+			canAsc: 'dt-orderable-asc',
+			canDesc: 'dt-orderable-desc',
+			isAsc: 'dt-ordering-asc',
+			isDesc: 'dt-ordering-desc',
+			none: 'dt-orderable-none',
+			position: 'sorting_'
+		},
+		processing: {
+			container: 'dt-processing'
+		},
+		scrolling: {
+			body: 'dt-scroll-body',
+			container: 'dt-scroll',
+			footer: {
+				self: 'dt-scroll-foot',
+				inner: 'dt-scroll-footInner'
+			},
+			header: {
+				self: 'dt-scroll-head',
+				inner: 'dt-scroll-headInner'
+			}
+		},
+		search: {
+			container: 'dt-search',
+			input: 'dt-input'
+		},
+		table: 'dataTable',
+		paging: {
+			active: 'current',
+			button: 'dt-paging-button',
+			container: 'dt-paging',
+			disabled: 'disabled',
+		}
+	},
 
 
 	/**
@@ -596,65 +650,6 @@ DataTable.ext = _ext = {
 };
 
 // #endregion
-// #region ext.classes.js
-
-$.extend(DataTable.ext.classes, {
-	container: 'dt-container',
-	empty: {
-		row: 'dt-empty'
-	},
-	info: {
-		container: 'dt-info'
-	},
-	layout: {
-		row: 'dt-layout-row',
-		cell: 'dt-layout-cell',
-		tableRow: 'dt-layout-table',
-		start: 'dt-layout-start',
-		end: 'dt-layout-end',
-		full: 'dt-layout-full'
-	},
-	length: {
-		container: 'dt-length',
-		select: 'dt-input'
-	},
-	order: {
-		canAsc: 'dt-orderable-asc',
-		canDesc: 'dt-orderable-desc',
-		isAsc: 'dt-ordering-asc',
-		isDesc: 'dt-ordering-desc',
-		none: 'dt-orderable-none',
-		position: 'sorting_'
-	},
-	processing: {
-		container: 'dt-processing'
-	},
-	scrolling: {
-		body: 'dt-scroll-body',
-		container: 'dt-scroll',
-		footer: {
-			self: 'dt-scroll-foot',
-			inner: 'dt-scroll-footInner'
-		},
-		header: {
-			self: 'dt-scroll-head',
-			inner: 'dt-scroll-headInner'
-		}
-	},
-	search: {
-		container: 'dt-search',
-		input: 'dt-input'
-	},
-	table: 'dataTable',
-	paging: {
-		active: 'current',
-		button: 'dt-paging-button',
-		container: 'dt-paging',
-		disabled: 'disabled',
-	}
-});
-
-// #endregion
 
 // #region core.internal.js
 
@@ -685,17 +680,16 @@ var _max_str_len = Math.pow(2, 28);
 // Escape regular expression special characters
 var _re_escape_regex = new RegExp('(\\' + ['/', '.', '*', '+', '?', '|', '(', ')', '[', ']', '{', '}', '\\', '$', '^', '-'].join('|\\') + ')', 'g');
 
-var _empty = function (d) {
+function _empty(d) {
 	return !d || d === true || d === '-' ? true : false;
-};
+}
 
-
-var _intVal = function (s) {
+function _intVal(s) {
 	var integer = parseInt(s, 10);
 	return !isNaN(integer) && isFinite(s) ? integer : null;
-};
+}
 
-var _pluck = function (a, prop, prop2) {
+function _pluck(a, prop, prop2) {
 	var out = [];
 	var i = 0, ien = a.length;
 
@@ -717,9 +711,9 @@ var _pluck = function (a, prop, prop2) {
 	}
 
 	return out;
-};
+}
 
-var _range = function (len, start) {
+function _range(len, start) {
 	var out = [];
 	var end;
 
@@ -737,10 +731,10 @@ var _range = function (len, start) {
 	}
 
 	return out;
-};
+}
 
 // Replaceable function in api.util
-var _stripHtml = function (input) {
+function _stripHtml(input) {
 	if (!input || typeof input !== 'string') {
 		return input;
 	}
@@ -754,6 +748,8 @@ var _stripHtml = function (input) {
 
 	input = input.replace(_re_html, ''); // Complete tags
 
+
+
 	// Safety for incomplete script tag - use do / while to ensure that
 	// we get all instances
 	do {
@@ -762,11 +758,11 @@ var _stripHtml = function (input) {
 	} while (input !== previous);
 
 	return previous;
-};
+}
 
 // Remove diacritics from a string by decomposing it and then removing
 // non-ascii characters
-var _normalize = function (str) {
+function _normalize(str) {
 	if (typeof str !== 'string') {
 		return str;
 	}
@@ -790,7 +786,7 @@ var _normalize = function (str) {
  * @return {boolean} true if all unique, false otherwise
  * @ignore
  */
-var _areAllUnique = function (src) {
+function _areAllUnique(src) {
 	if (src.length < 2) {
 		return true;
 	}
@@ -807,7 +803,7 @@ var _areAllUnique = function (src) {
 	}
 
 	return true;
-};
+}
 
 
 /**
@@ -817,7 +813,7 @@ var _areAllUnique = function (src) {
  * @return {array} Array of unique items
  * @ignore
  */
-var _unique = function (src) {
+function _unique(src) {
 	if (Array.from && Set) {
 		return Array.from(new Set(src));
 	}
@@ -831,9 +827,7 @@ var _unique = function (src) {
 	// consider. See jsperf.app/compare-array-unique-versions/4 for more
 	// information.
 	var
-		out = [],
-		val,
-		k = 0;
+		out = [], val, k = 0;
 
 	again: for (let i = 0; i < src.length; i++) {
 		val = src[i];
@@ -849,11 +843,11 @@ var _unique = function (src) {
 	}
 
 	return out;
-};
+}
 
 // Surprisingly this is faster than [].concat.apply
 // https://jsperf.com/flatten-an-array-loop-vs-reduce/2
-var _flatten = function (out, val) {
+function _flatten(out, val) {
 	if (Array.isArray(val)) {
 		for (var i = 0; i < val.length; i++) {
 			_flatten(out, val[i]);
@@ -1201,7 +1195,6 @@ function _fnAddColumn(oSettings) {
 	});
 	oSettings.columns.push(oCol);
 }
-
 
 /**
  * Apply options for a column
