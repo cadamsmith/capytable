@@ -180,13 +180,6 @@ var DataTable = function (selector, options) {
 			* Table HTML init
 			* Cache the header, body and footer as required, creating them if needed
 			*/
-		var caption = $this.children('caption');
-
-		// Store the caption side, so we can remove the element from the document
-		// when creating the element
-		if (caption.length) {
-			caption[0]._captionSide = caption.css('caption-side');
-		}
 
 		if (thead.length === 0) {
 			thead = $('<thead/>').appendTo($this);
