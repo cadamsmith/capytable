@@ -9,49 +9,42 @@
 // var $ = jQuery;
 
 // #region DataTable
-var DataTable = function (selector, options) {
-	// When creating with `new`, create a new DataTable, returning the API instance
-	if (this instanceof DataTable) {
-		return $(selector).DataTable(options);
-	}
-	else {
-		// Argument switching
-		options = selector;
-	}
+class DataTable {
+	constructor(selector, options) {
+		const element = document.querySelector(selector);
 
-	var _that = this;
-	var emptyInit = options === undefined;
-	var len = this.length;
-
-	if (emptyInit) {
-		options = {};
-	}
-
-	// Method to get DT API instance from jQuery object
-	this.api = function () {
-		return new _Api(this);
-	};
-
-	this.each(function () {
-		// For each initialisation we want to give it a clean initialisation
-		// object that can be bashed around
-		var o = {};
-		var oInit = len > 1 ? // optimisation for single table case
-			_fnExtend(o, options, true) :
-			options;
-
-		var sId = this.getAttribute('id');
-		var defaults = DataTable.defaults;
-		var $this = $(this);
-
-
-		/* Sanity check */
-		if (this.nodeName.toLowerCase() != 'table') {
-			_fnLog(null, 0, 'Non-table node initialisation (' + this.nodeName + ')', 2);
+		var _that = this;
+		var emptyInit = options === undefined;
+		if (!element) {
+			_fnLog(null, 0, 'No element found for initialisation');
 			return;
 		}
 
-		$(this).trigger('options.dt', oInit);
+		if (emptyInit) {
+			options = {};
+		}
+
+		// Method to get DT API instance from jQuery object
+		element.api = function () {
+			return new _Api(this);
+		};
+
+		// For each initialisation we want to give it a clean initialisation
+		// object that can be bashed around
+		var oInit = options;
+
+		var sId = element.getAttribute('id');
+		var defaults = DataTable.defaults;
+		var $this = $(element);
+
+
+		/* Sanity check */
+		if (element.nodeName.toLowerCase() != 'table') {
+			_fnLog(null, 0, 'Non-table node initialisation (' + element.nodeName + ')', 2);
+			return;
+		}
+
+		$(element).trigger('options.dt', oInit);
 
 		/* Check to see if we are re-initialising a table */
 		var allSettings = DataTable.settings;
@@ -59,7 +52,7 @@ var DataTable = function (selector, options) {
 			var s = allSettings[i];
 
 			/* Base check on table node */
-			if (s.tableElement == this ||
+			if (s.tableElement == element ||
 				(s.tHeadElement && s.tHeadElement.parentNode == this) ||
 				(s.tFootElement && s.tFootElement.parentNode == this)) {
 				if (emptyInit) {
@@ -76,7 +69,7 @@ var DataTable = function (selector, options) {
 				* instance by simply deleting it. This is under the assumption that the table has been
 				* destroyed by other methods. Anyone using non-id selectors will need to do this manually
 				*/
-			if (s.tableId == this.id) {
+			if (s.tableId == element.id) {
 				allSettings.splice(i, 1);
 				break;
 			}
@@ -85,16 +78,16 @@ var DataTable = function (selector, options) {
 		/* Ensure the table has an ID - required for accessibility */
 		if (sId === null || sId === "") {
 			sId = "DataTables_Table_" + (DataTable.ext._unique++);
-			this.id = sId;
+			element.id = sId;
 		}
 
 		/* Create the settings object for this table and set some of the default parameters */
 		var settings = $.extend(true, {}, DataTable.models.oSettings, {
 			instanceId: sId,
 			"tableId": sId,
-			colgroup: $('<colgroup>').prependTo(this)
+			colgroup: $('<colgroup>').prependTo(element)
 		});
-		settings.tableElement = this;
+		settings.tableElement = element;
 
 		allSettings.push(settings);
 
@@ -103,7 +96,7 @@ var DataTable = function (selector, options) {
 
 		// Need to add the instance after the instance after the settings object has been added
 		// to the settings array, so we can self reference the table instance if more than one
-		settings.instance = (_that.length === 1) ? _that : $this.dataTable();
+		settings.instance = _that;
 
 		// Apply the defaults and init options to make a single init object will all
 		// options defined from defaults and instance options.
@@ -136,7 +129,7 @@ var DataTable = function (selector, options) {
 			* See if we should load columns automatically or use defined ones
 			*/
 		var columnsInit = [];
-		var thead = this.getElementsByTagName('thead');
+		var thead = element.getElementsByTagName('thead');
 		var initHeaderLayout = _fnDetectHeader(settings, thead[0]);
 
 		// If we don't have a columns array, then generate one with nulls
@@ -169,7 +162,6 @@ var DataTable = function (selector, options) {
 		* Table HTML init
 		* Cache the header, body and footer as required, creating them if needed
 		*/
-
 		if (thead.length === 0) {
 			thead = $('<thead/>').appendTo($this);
 		}
@@ -201,9 +193,102 @@ var DataTable = function (selector, options) {
 
 		_fnCallbackFire(settings, null, 'i18n', [settings], true);
 		_fnInitialise(settings);
-	});
-	_that = null;
-	return this;
+
+		_that = null;
+		return element;
+	}
+	// Get / set type
+	static type(name, prop, val) {
+		if (!prop) {
+			return {
+				className: _extTypes.className[name],
+				detect: _extTypes.detect.find(function (fn) {
+					return fn.name === name;
+				}),
+				order: {
+					pre: _extTypes.order[name + '-pre'],
+					asc: _extTypes.order[name + '-asc'],
+					desc: _extTypes.order[name + '-desc']
+				},
+				render: _extTypes.render[name],
+				search: _extTypes.search[name]
+			};
+		}
+
+		var setProp = function (prop, propVal) {
+			_extTypes[prop][name] = propVal;
+		};
+		var setDetect = function (detect) {
+			// `detect` can be a function or an object - we set a name
+			// property for either - that is used for the detection
+			Object.defineProperty(detect, "name", { value: name });
+
+			var idx = _extTypes.detect.findIndex(function (item) {
+				return item.name === name;
+			});
+
+			if (idx === -1) {
+				_extTypes.detect.unshift(detect);
+			}
+			else {
+				_extTypes.detect.splice(idx, 1, detect);
+			}
+		};
+		var setOrder = function (obj) {
+			_extTypes.order[name + '-pre'] = obj.pre; // can be undefined
+			_extTypes.order[name + '-asc'] = obj.asc; // can be undefined
+			_extTypes.order[name + '-desc'] = obj.desc; // can be undefined
+		};
+
+		// prop is optional
+		if (val === undefined) {
+			val = prop;
+			prop = null;
+		}
+
+		if (prop === 'className') {
+			setProp('className', val);
+		}
+		else if (prop === 'detect') {
+			setDetect(val);
+		}
+		else if (prop === 'order') {
+			setOrder(val);
+		}
+		else if (prop === 'render') {
+			setProp('render', val);
+		}
+		else if (prop === 'search') {
+			setProp('search', val);
+		}
+		else if (!prop) {
+			if (val.className) {
+				setProp('className', val.className);
+			}
+
+			if (val.detect !== undefined) {
+				setDetect(val.detect);
+			}
+
+			if (val.order) {
+				setOrder(val.order);
+			}
+
+			if (val.render !== undefined) {
+				setProp('render', val.render);
+			}
+
+			if (val.search !== undefined) {
+				setProp('search', val.search);
+			}
+		}
+	}
+	// Get a list of types
+	static types() {
+		return _extTypes.detect.map(function (fn) {
+			return fn.name;
+		});
+	}
 }
 // #endregion
 
@@ -2016,19 +2101,19 @@ function _fnAddOptionsHtml(settings) {
 	//var top = _layoutArray(settings, 'top');
 	var top = {
 		start: {
-			contents: [ getFeature('pageLength', null), ]
+			contents: [getFeature('pageLength', null),]
 		},
 		end: {
-			contents: [ getFeature('search', null) ]
+			contents: [getFeature('search', null)]
 		}
 	};
 
 	var bottom = {
 		start: {
-			contents: [ getFeature('info', null), ]
+			contents: [getFeature('info', null),]
 		},
 		end: {
-			contents: [ getFeature('paging', null) ]
+			contents: [getFeature('paging', null)]
 		}
 	};
 	var renderer = _fnRenderer('layout');
@@ -5166,99 +5251,7 @@ var _filterString = function (stripHtml) {
 
 var _extTypes = DataTable.ext.type;
 
-// Get / set type
-DataTable.type = function (name, prop, val) {
-	if (!prop) {
-		return {
-			className: _extTypes.className[name],
-			detect: _extTypes.detect.find(function (fn) {
-				return fn.name === name;
-			}),
-			order: {
-				pre: _extTypes.order[name + '-pre'],
-				asc: _extTypes.order[name + '-asc'],
-				desc: _extTypes.order[name + '-desc']
-			},
-			render: _extTypes.render[name],
-			search: _extTypes.search[name]
-		};
-	}
 
-	var setProp = function (prop, propVal) {
-		_extTypes[prop][name] = propVal;
-	};
-	var setDetect = function (detect) {
-		// `detect` can be a function or an object - we set a name
-		// property for either - that is used for the detection
-		Object.defineProperty(detect, "name", { value: name });
-
-		var idx = _extTypes.detect.findIndex(function (item) {
-			return item.name === name;
-		});
-
-		if (idx === -1) {
-			_extTypes.detect.unshift(detect);
-		}
-		else {
-			_extTypes.detect.splice(idx, 1, detect);
-		}
-	};
-	var setOrder = function (obj) {
-		_extTypes.order[name + '-pre'] = obj.pre; // can be undefined
-		_extTypes.order[name + '-asc'] = obj.asc; // can be undefined
-		_extTypes.order[name + '-desc'] = obj.desc; // can be undefined
-	};
-
-	// prop is optional
-	if (val === undefined) {
-		val = prop;
-		prop = null;
-	}
-
-	if (prop === 'className') {
-		setProp('className', val);
-	}
-	else if (prop === 'detect') {
-		setDetect(val);
-	}
-	else if (prop === 'order') {
-		setOrder(val);
-	}
-	else if (prop === 'render') {
-		setProp('render', val);
-	}
-	else if (prop === 'search') {
-		setProp('search', val);
-	}
-	else if (!prop) {
-		if (val.className) {
-			setProp('className', val.className);
-		}
-
-		if (val.detect !== undefined) {
-			setDetect(val.detect);
-		}
-
-		if (val.order) {
-			setOrder(val.order);
-		}
-
-		if (val.render !== undefined) {
-			setProp('render', val.render);
-		}
-
-		if (val.search !== undefined) {
-			setProp('search', val.search);
-		}
-	}
-}
-
-// Get a list of types
-DataTable.types = function () {
-	return _extTypes.detect.map(function (fn) {
-		return fn.name;
-	});
-};
 
 //
 // Built in data types
@@ -6043,17 +6036,5 @@ DataTable.$ = $;
 // Legacy aliases
 $.fn.dataTableSettings = DataTable.settings;
 $.fn.dataTableExt = DataTable.ext;
-
-// With a capital `D` we return a DataTables API instance rather than a
-// jQuery object
-$.fn.DataTable = function (opts) {
-	return $(this).dataTable(opts).api();
-};
-
-// All properties that are available to $.fn.dataTable should also be
-// available on $.fn.DataTable
-$.each(DataTable, function (prop, val) {
-	$.fn.DataTable[prop] = val;
-});
 
 export default DataTable;
