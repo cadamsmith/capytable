@@ -189,7 +189,7 @@ class DataTable {
 		_fnCallbackFire(settings, null, 'i18n', [settings], true);
 		_fnInitialise(settings);
 
-		return element;
+		this.settings = settings;
 	}
 	
 	// Get / set type
@@ -2537,7 +2537,6 @@ function _fnPageChange(settings, action) {
 // #endregion
 // #region core.processing.js
 
-
 /**
  * Display or hide the processing indicator
  *  @param {object} settings DataTables settings object
@@ -2611,38 +2610,41 @@ function _fnCalculateColumnWidths(settings) {
 	// node in the data, assign any user defined widths, then insert it into
 	// the DOM and allow the browser to do all the hard work of calculating
 	// table widths
-	var tmpTable = $(table.cloneNode())
-		.css('visibility', 'hidden')
-		.removeAttr('id');
+	const tmpTable = table.cloneNode()
+	tmpTable.style.visibility = 'hidden';
+	tmpTable.removeAttribute('id');
 
 	// Clean up the table body
-	tmpTable.append('<tbody>')
-	var tr = $('<tr/>').appendTo(tmpTable.find('tbody'));
+	const tbody = document.createElement('tbody');
+	tmpTable.appendChild(tbody);
+
+	const tr = document.createElement('tr');
+	tbody.appendChild(tr);
 
 	// Clone the table header and footer - we can't use the header / footer
 	// from the cloned table, since if scrolling is active, the table's
 	// real header and footer are contained in different table tags
-	tmpTable
-		.append($(settings.tHeadElement).clone())
-		.append($(settings.tFootElement).clone());
+	tmpTable.appendChild(settings.tHeadElement.cloneNode(true));
+	tmpTable.appendChild(settings.tFootElement.cloneNode(true));
 
 	// Remove any assigned widths from the footer (from scrolling)
-	tmpTable.find('tfoot th, tfoot td').css('width', '');
+	[...tmpTable.querySelectorAll('tfoot th, tfoot td')]
+		.forEach(el => el.style.width = '');
 
 	// Apply custom sizing to the cloned header
-	tmpTable.find('thead th, thead td').each(function () {
+	[...tmpTable.querySelectorAll('thead th, thead td')].forEach(function(el) {
 		// Get the `width` from the header layout
-		var width = _fnColumnsSumWidth(settings, this, true);
+		var width = _fnColumnsSumWidth(settings, el, true);
 
 		if (width) {
 			// Need to set the width and min-width, otherwise the browser
 			// will attempt to collapse the table beyond want might have
 			// been specified
-			this.style.width = width;
-			this.style.minWidth = width;
+			el.style.width = width;
+			el.style.minWidth = width;
 		}
 		else {
-			this.style.width = '';
+			el.style.width = '';
 		}
 	});
 
@@ -2655,37 +2657,39 @@ function _fnCalculateColumnWidths(settings) {
 		var text = longest;
 		var insert = longest.indexOf('<') === -1
 			? document.createTextNode(text)
-			: text
+			: text;
 
-		$('<td/>')
-			.addClass(autoClass)
-			.append(insert)
-			.appendTo(tr);
+		const td = document.createElement('td');
+		td.classList.add(autoClass);
+		td.appendChild(insert);
+		tr.appendChild(td);
 	}
 
 	// Tidy the temporary table - remove name attributes so there aren't
 	// duplicated in the dom (radio elements for example)
-	$('[name]', tmpTable).removeAttr('name');
+	[...tmpTable.querySelectorAll('[name]')]
+		.forEach(el => el.removeAttribute('name'));
+
 
 	// Table has been built, attach to the document so we can work with it.
 	// A holding element is used, positioned at the top of the container
 	// with minimal height, so it has no effect on if the container scrolls
 	// or not. Otherwise it might trigger scrolling when it actually isn't
 	// needed
-	var holder = $('<div/>').css({})
-		.append(tmpTable)
-		.appendTo(tableContainer);
+	const holder = document.createElement('div');
+	holder.appendChild(tmpTable);
+	tableContainer.appendChild(holder);
 
 	// When scrolling (X or Y) we want to set the width of the table as 
 	// appropriate. However, when not scrolling leave the table width as it
 	// is. This results in slightly different, but I think correct behaviour
 	if (tableWidthAttr) {
-		tmpTable.width(tableWidthAttr);
+		tmpTable.width = tableWidthAttr;
 	}
 
 	// Get the width of each column in the constructed table
 	var total = 0;
-	var bodyCells = tmpTable.find('tbody tr').eq(0).children();
+	const bodyCells = tmpTable.querySelector('tbody tr').children;
 
 	for (let i = 0; i < visibleColumns.length; i++) {
 		// Use getBounding for sub-pixel accuracy, which we then want to round up!
@@ -3112,16 +3116,20 @@ function _fnSortingClasses(settings) {
 			colIdx = oldSort[i].src;
 
 			// Remove column sorting
-			$(_pluck(settings.data, 'anCells', colIdx))
-				.removeClass(sortClass + (i < 2 ? i + 1 : 3));
+			const removeClass = sortClass + (i < 2 ? i + 1 : 3);
+
+			_pluck(settings.data, 'anCells', colIdx)
+				.forEach(el => el.classList.remove(removeClass));
 		}
 
 		// Add new column sorting
 		for (let i = 0; i < sort.length; i++) {
 			colIdx = sort[i].src;
 
-			$(_pluck(settings.data, 'anCells', colIdx))
-				.addClass(sortClass + (i < 2 ? i + 1 : 3));
+			const addClass = sortClass + (i < 2 ? i + 1 : 3);
+
+			_pluck(settings.data, 'anCells', colIdx)
+				.forEach(el => el.classList.add(addClass));
 		}
 	}
 
@@ -3211,7 +3219,7 @@ function _fnLog(settings, level, msg, tn) {
  */
 function _fnMap(ret, src, name, mappedName) {
 	if (Array.isArray(name)) {
-		$.each(name, function (i, val) {
+		name.forEach(function(val) {
 			if (Array.isArray(val)) {
 				_fnMap(ret, src, val[0], val[1]);
 			}

@@ -1,3 +1,4 @@
 import DataTable from './datatable.js';
 
-const table = new DataTable('#table');
+const tableObj = new DataTable('#table');
+console.log(tableObj);
