@@ -167,42 +167,6 @@ var DataTable = function (selector, options) {
 			_fnColumnOptions(oSettings, iCol);
 		});
 
-		/* HTML5 attribute detection - build an mData object automatically if the
-			* attributes are found
-			*/
-		var rowOne = $this.children('tbody').find('tr').eq(0);
-
-		if (rowOne.length) {
-			var a = function (cell, name) {
-				return cell.getAttribute('data-' + name) !== null ? name : null;
-			};
-
-			$(rowOne[0]).children('th, td').each(function (i, cell) {
-				var col = oSettings.columns[i];
-
-				if (!col) {
-					_fnLog(oSettings, 0, 'Incorrect column count', 18);
-				}
-
-				if (col.data === i) {
-					var sort = a(cell, 'sort') || a(cell, 'order');
-					var filter = a(cell, 'filter') || a(cell, 'search');
-
-					if (sort !== null || filter !== null) {
-						col.data = {
-							_: i + '.display',
-							sort: sort !== null ? i + '.@data-' + sort : undefined,
-							type: sort !== null ? i + '.@data-' + sort : undefined,
-							filter: filter !== null ? i + '.@data-' + filter : undefined
-						};
-						col._isArrayHost = true;
-
-						_fnColumnOptions(oSettings, i);
-					}
-				}
-			});
-		}
-
 		// Do a first pass on the sorting classes (allows any size changes to be taken into
 		// account, and also will apply sorting disabled classes if disabled
 		_fnSortingClasses(oSettings);
