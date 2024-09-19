@@ -40,8 +40,6 @@ var DataTable = function (selector, options) {
 			_fnExtend(o, options, true) :
 			options;
 
-
-		var i = 0, iLen;
 		var sId = this.getAttribute('id');
 		var defaults = DataTable.defaults;
 		var $this = $(this);
@@ -57,7 +55,7 @@ var DataTable = function (selector, options) {
 
 		/* Check to see if we are re-initialising a table */
 		var allSettings = DataTable.settings;
-		for (i = 0, iLen = allSettings.length; i < iLen; i++) {
+		for (let i = 0; i < allSettings.length; i++) {
 			var s = allSettings[i];
 
 			/* Base check on table node */
@@ -91,21 +89,21 @@ var DataTable = function (selector, options) {
 		}
 
 		/* Create the settings object for this table and set some of the default parameters */
-		var oSettings = $.extend(true, {}, DataTable.models.oSettings, {
+		var settings = $.extend(true, {}, DataTable.models.oSettings, {
 			instanceId: sId,
 			"tableId": sId,
 			colgroup: $('<colgroup>').prependTo(this)
 		});
-		oSettings.tableElement = this;
+		settings.tableElement = this;
 
-		allSettings.push(oSettings);
+		allSettings.push(settings);
 
 		// Make a single API instance available for internal handling
-		oSettings.api = new _Api(oSettings);
+		settings.api = new _Api(settings);
 
 		// Need to add the instance after the instance after the settings object has been added
 		// to the settings array, so we can self reference the table instance if more than one
-		oSettings.instance = (_that.length === 1) ? _that : $this.dataTable();
+		settings.instance = (_that.length === 1) ? _that : $this.dataTable();
 
 		// Apply the defaults and init options to make a single init object will all
 		// options defined from defaults and instance options.
@@ -113,31 +111,25 @@ var DataTable = function (selector, options) {
 
 
 		// Map the initialisation options onto the settings object
-		_fnMap(oSettings.features, oInit, [
+		_fnMap(settings.features, oInit, [
 			"paging",
 			"searching",
 			"ordering",
 		]);
-		_fnMap(oSettings, oInit, [
+		_fnMap(settings, oInit, [
 			"order",
 			"lengthMenu",
 			"rowId",
 			"search",
 		]);
 
-		oSettings._displayLength = oSettings.lengthMenu[0];
+		settings._displayLength = settings.lengthMenu[0];
 
-		oSettings.getRowId = _fnGetObjectDataFn(oInit.rowId);
+		settings.getRowId = _fnGetObjectDataFn(oInit.rowId);
+		$this.addClass('dataTable');
 
-		var oClasses = DataTable.ext.classes;
-
-		$this.addClass(oClasses.table);
-
-		if (oSettings.initDisplayStart === undefined) {
-			/* Display start point, taking into account the save saving */
-			oSettings.initDisplayStart = 0;
-			oSettings._displayStart = 0;
-		}
+		/* Display start point, taking into account the save saving */
+		settings._displayStart = 0;
 
 		/*
 			* Columns
@@ -145,34 +137,31 @@ var DataTable = function (selector, options) {
 			*/
 		var columnsInit = [];
 		var thead = this.getElementsByTagName('thead');
-		var initHeaderLayout = _fnDetectHeader(oSettings, thead[0]);
+		var initHeaderLayout = _fnDetectHeader(settings, thead[0]);
 
 		// If we don't have a columns array, then generate one with nulls
-		if (oInit.columns) {
-			columnsInit = oInit.columns;
-		}
-		else if (initHeaderLayout.length) {
-			for (i = 0, iLen = initHeaderLayout[0].length; i < iLen; i++) {
+		if (initHeaderLayout.length) {
+			for (let i = 0; i < initHeaderLayout[0].length; i++) {
 				columnsInit.push(null);
 			}
 		}
 
 		// Add the columns
-		for (i = 0, iLen = columnsInit.length; i < iLen; i++) {
-			_fnAddColumn(oSettings);
+		for (let i = 0; i < columnsInit.length; i++) {
+			_fnAddColumn(settings);
 		}
 
 		// Apply the column definitions
-		_fnApplyColumnDefs(columnsInit, function (iCol, oDef) {
-			_fnColumnOptions(oSettings, iCol);
+		_fnApplyColumnDefs(columnsInit, function (iCol) {
+			_fnColumnOptions(settings, iCol);
 		});
 
 		// Do a first pass on the sorting classes (allows any size changes to be taken into
 		// account, and also will apply sorting disabled classes if disabled
-		_fnSortingClasses(oSettings);
+		_fnSortingClasses(settings);
 
-		_fnCallbackReg(oSettings, 'drawCallbacks', function () {
-			_fnSortingClasses(oSettings);
+		_fnCallbackReg(settings, 'drawCallbacks', function () {
+			_fnSortingClasses(settings);
 		});
 
 
@@ -184,13 +173,13 @@ var DataTable = function (selector, options) {
 		if (thead.length === 0) {
 			thead = $('<thead/>').appendTo($this);
 		}
-		oSettings.tHeadElement = thead[0];
+		settings.tHeadElement = thead[0];
 
 		var tbody = $this.children('tbody');
 		if (tbody.length === 0) {
 			tbody = $('<tbody/>').insertAfter(thead);
 		}
-		oSettings.tBodyElement = tbody[0];
+		settings.tBodyElement = tbody[0];
 
 		var tfoot = $this.children('tfoot');
 		if (tfoot.length === 0) {
@@ -198,20 +187,20 @@ var DataTable = function (selector, options) {
 			// a tfoot element for the caption element to be appended to
 			tfoot = $('<tfoot/>').appendTo($this);
 		}
-		oSettings.tFootElement = tfoot[0];
+		settings.tFootElement = tfoot[0];
 
 		// Copy the data index array
-		oSettings.display = oSettings.displayMaster.slice();
+		settings.display = settings.displayMaster.slice();
 
 		// Initialisation complete - table can be drawn
-		oSettings.initialized = true;
+		settings.initialized = true;
 
 		// Language definitions
-		var language = oSettings.language;
+		var language = settings.language;
 		$.extend(true, language, oInit.language);
 
-		_fnCallbackFire(oSettings, null, 'i18n', [oSettings], true);
-		_fnInitialise(oSettings);
+		_fnCallbackFire(settings, null, 'i18n', [settings], true);
+		_fnInitialise(settings);
 	});
 	_that = null;
 	return this;
@@ -1407,7 +1396,7 @@ function _fnApplyColumnDefs(aoCols, fn) {
 	// Statically defined columns array
 	if (aoCols) {
 		for (let i = 0; i < aoCols.length; i++) {
-			fn(i, aoCols[i]);
+			fn(i);
 		}
 	}
 }
@@ -2036,8 +2025,6 @@ function _fnDrawHead(settings, source) {
  *  @memberof DataTable#oApi
  */
 function _fnDraw(oSettings) {
-	// Allow for state saving and a custom start position
-	_fnStart(oSettings);
 
 	/* Provide a pre-callback function which can be used to cancel the draw is false is returned */
 
@@ -2353,24 +2340,6 @@ function _fnDetectHeader(settings, thead, write) {
 
 	return layout;
 }
-
-/**
- * Set the start position for draw
- *  @param {object} oSettings dataTables settings object
- */
-function _fnStart(oSettings) {
-	var initDisplayStart = oSettings.initDisplayStart;
-
-	// Check and see if we have an initial draw position from state saving
-	if (initDisplayStart !== undefined && initDisplayStart !== -1) {
-		oSettings._displayStart = initDisplayStart >= oSettings.totalDisplayed()
-			? 0
-			: initDisplayStart;
-
-		oSettings.initDisplayStart = -1;
-	}
-}
-
 
 // #endregion
 // #region core.filter.js
