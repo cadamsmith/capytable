@@ -3077,9 +3077,7 @@ function _fnSortData(settings, colIdx) {
 		if (!row._sortData[colIdx]) {
 			cellData = _fnGetCellData(settings, rowIdx, colIdx, 'sort');
 
-			row._sortData[colIdx] = formatter ?
-				formatter(cellData, settings) :
-				cellData;
+			row._sortData[colIdx] = formatter(cellData, settings);
 		}
 	}
 }
@@ -3290,7 +3288,6 @@ function _fnCallbackFire(settings, callbackArr, eventName, args, bubbles) {
 
 	return ret;
 }
-
 
 function _fnLengthOverflow(settings) {
 	var
@@ -3908,9 +3905,8 @@ _Api.registerPlural = _api_registerPlural = function (pluralName, singularName, 
 
 var _selector_run = function (selector, selectFn, settings, opts) {
 	var
-		type = 'column',
 		out = [], res,
-		a, i, ien, j, jen,
+		a,
 		selectorType = typeof selector;
 
 	// Can't just check for isArray here, as an API or jQuery instance might be
@@ -3919,13 +3915,13 @@ var _selector_run = function (selector, selectFn, settings, opts) {
 		selector = [selector];
 	}
 
-	for (i = 0, ien = selector.length; i < ien; i++) {
+	for (let i = 0; i < selector.length; i++) {
 		// Only split on simple strings - complex expressions will be jQuery selectors
 		a = selector[i] && selector[i].split && !selector[i].match(/[[(:]/) ?
 			selector[i].split(',') :
 			[selector[i]];
 
-		for (j = 0, jen = a.length; j < jen; j++) {
+		for (let j = 0; j < a.length; j++) {
 			res = selectFn(typeof a[j] === 'string' ? (a[j]).trim() : a[j]);
 
 			// Remove empty items
@@ -3940,9 +3936,9 @@ var _selector_run = function (selector, selectFn, settings, opts) {
 	}
 
 	// selector extensions
-	var ext = _ext.selector[type];
+	var ext = _ext.selector['column'];
 	if (ext.length) {
-		for (i = 0, ien = ext.length; i < ien; i++) {
+		for (let i = 0; i < ext.length; i++) {
 			out = ext[i](settings, opts, out);
 		}
 	}
@@ -3971,7 +3967,7 @@ var _selector_opts = function (opts) {
 
 var _selector_row_indexes = function (settings, opts) {
 	var
-		i, ien, tmp, a = [],
+		tmp, a = [],
 		displayFiltered = settings.display,
 		displayMaster = settings.displayMaster;
 
@@ -3984,7 +3980,7 @@ var _selector_row_indexes = function (settings, opts) {
 		// Current page implies that order=current and filter=applied, since it is
 		// fairly senseless otherwise, regardless of what order and search actually
 		// are
-		for (i = settings._displayStart, ien = settings.displayEnd(); i < ien; i++) {
+		for (let i = settings._displayStart, ien = settings.displayEnd(); i < ien; i++) {
 			a.push(displayFiltered[i]);
 		}
 	}
@@ -3999,7 +3995,7 @@ var _selector_row_indexes = function (settings, opts) {
 			// O(n+m) solution by creating a hash map
 			var displayFilteredMap = {};
 
-			for (i = 0, ien = displayFiltered.length; i < ien; i++) {
+			for (let i = 0; i < displayFiltered.length; i++) {
 				displayFilteredMap[displayFiltered[i]] = null;
 			}
 
@@ -4011,7 +4007,7 @@ var _selector_row_indexes = function (settings, opts) {
 		}
 	}
 	else if (order == 'index' || order == 'original') {
-		for (i = 0, ien = settings.data.length; i < ien; i++) {
+		for (let i = 0; i < settings.data.length; i++) {
 			if (!settings.data[i]) {
 				continue;
 			}
@@ -4037,7 +4033,7 @@ var _selector_row_indexes = function (settings, opts) {
 			a = ordered;
 		}
 		else { // applied | removed
-			for (i = 0; i < ordered.length; i++) {
+			for (let i = 0; i < ordered.length; i++) {
 				tmp = displayFiltered.indexOf(ordered[i]);
 
 				if ((tmp === -1 && search == 'removed') ||
@@ -5448,28 +5444,6 @@ DataTable.feature = {};
 DataTable.feature.register = function (name, cb) {
 	DataTable.ext.features[name] = cb;
 };
-
-// #endregion
-// #region features.div.js
-
-function _divProp(el, prop, val) {
-	if (val) {
-		el[prop] = val;
-	}
-}
-
-DataTable.feature.register('div', function (settings, opts) {
-	var n = $('<div>')[0];
-
-	if (opts) {
-		_divProp(n, 'className', opts.className);
-		_divProp(n, 'id', opts.id);
-		_divProp(n, 'innerHTML', opts.html);
-		_divProp(n, 'textContent', opts.text);
-	}
-
-	return n;
-});
 
 // #endregion
 // #region features.info.js
