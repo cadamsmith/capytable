@@ -13,7 +13,6 @@ class DataTable {
 	constructor(selector, options) {
 		const element = document.querySelector(selector);
 
-		var _that = this;
 		var emptyInit = options === undefined;
 		if (!element) {
 			_fnLog(null, 0, 'No element found for initialisation');
@@ -35,16 +34,12 @@ class DataTable {
 
 		var sId = element.getAttribute('id');
 		var defaults = DataTable.defaults;
-		var $this = $(element);
-
 
 		/* Sanity check */
 		if (element.nodeName.toLowerCase() != 'table') {
 			_fnLog(null, 0, 'Non-table node initialisation (' + element.nodeName + ')', 2);
 			return;
 		}
-
-		$(element).trigger('options.dt', oInit);
 
 		/* Check to see if we are re-initialising a table */
 		var allSettings = DataTable.settings;
@@ -81,11 +76,14 @@ class DataTable {
 			element.id = sId;
 		}
 
+		const colGroupElement = document.createElement('colgroup');
+		element.prepend(colGroupElement);
+
 		/* Create the settings object for this table and set some of the default parameters */
 		var settings = $.extend(true, {}, DataTable.models.oSettings, {
 			instanceId: sId,
 			"tableId": sId,
-			colgroup: $('<colgroup>').prependTo(element)
+			colgroup: colGroupElement
 		});
 		settings.tableElement = element;
 
@@ -94,14 +92,9 @@ class DataTable {
 		// Make a single API instance available for internal handling
 		settings.api = new _Api(settings);
 
-		// Need to add the instance after the instance after the settings object has been added
-		// to the settings array, so we can self reference the table instance if more than one
-		settings.instance = _that;
-
 		// Apply the defaults and init options to make a single init object will all
 		// options defined from defaults and instance options.
 		oInit = _fnExtend(defaults, oInit);
-
 
 		// Map the initialisation options onto the settings object
 		_fnMap(settings.features, oInit, [
@@ -119,15 +112,15 @@ class DataTable {
 		settings._displayLength = settings.lengthMenu[0];
 
 		settings.getRowId = _fnGetObjectDataFn(oInit.rowId);
-		$this.addClass('dataTable');
+		element.classList.add('dataTable');
 
 		/* Display start point, taking into account the save saving */
 		settings._displayStart = 0;
 
 		/*
-			* Columns
-			* See if we should load columns automatically or use defined ones
-			*/
+		* Columns
+		* See if we should load columns automatically or use defined ones
+		*/
 		var columnsInit = [];
 		var thead = element.getElementsByTagName('thead');
 		var initHeaderLayout = _fnDetectHeader(settings, thead[0]);
@@ -157,29 +150,31 @@ class DataTable {
 			_fnSortingClasses(settings);
 		});
 
-
 		/*
 		* Table HTML init
 		* Cache the header, body and footer as required, creating them if needed
 		*/
 		if (thead.length === 0) {
-			thead = $('<thead/>').appendTo($this);
+			thead = [...document.createElement('thead')];
+			element.appendChild(thead);
 		}
 		settings.tHeadElement = thead[0];
 
-		var tbody = $this.children('tbody');
-		if (tbody.length === 0) {
-			tbody = $('<tbody/>').insertAfter(thead);
+		var tbody = element.querySelector(':scope > tbody');
+		if (!tbody) {
+			tbody = document.createElement('tbody');
+			thead.insertAdjacentElement('afterend', tbody); 
 		}
-		settings.tBodyElement = tbody[0];
+		settings.tBodyElement = tbody;
 
-		var tfoot = $this.children('tfoot');
-		if (tfoot.length === 0) {
+		var tfoot = element.querySelector(':scope > tfoot');
+		if (!tfoot) {
 			// If we are a scrolling table, and no footer has been given, then we need to create
 			// a tfoot element for the caption element to be appended to
-			tfoot = $('<tfoot/>').appendTo($this);
+			tfoot = document.createElement('tfoot');
+			element.appendChild(tfoot);
 		}
-		settings.tFootElement = tfoot[0];
+		settings.tFootElement = tfoot;
 
 		// Copy the data index array
 		settings.display = settings.displayMaster.slice();
@@ -194,9 +189,9 @@ class DataTable {
 		_fnCallbackFire(settings, null, 'i18n', [settings], true);
 		_fnInitialise(settings);
 
-		_that = null;
 		return element;
 	}
+	
 	// Get / set type
 	static type(name, prop, val) {
 		if (!prop) {
@@ -838,13 +833,12 @@ var _unique = function (src) {
 	var
 		out = [],
 		val,
-		i, ien = src.length,
-		j, k = 0;
+		k = 0;
 
-	again: for (i = 0; i < ien; i++) {
+	again: for (let i = 0; i < src.length; i++) {
 		val = src[i];
 
-		for (j = 0; j < k; j++) {
+		for (let j = 0; j < k; j++) {
 			if (out[j] === val) {
 				continue again;
 			}
@@ -1196,10 +1190,14 @@ function _fnAddColumn(oSettings) {
 	// Add column to columns array
 	var oDefaults = DataTable.defaults.column;
 	var iCol = oSettings.columns.length;
+
+	const colElement = document.createElement('col');
+	colElement.setAttribute('data-dt-column', iCol);
+
 	var oCol = $.extend({}, DataTable.models.oColumn, oDefaults, {
 		data: iCol,
 		idx: iCol,
-		colEl: $('<col>').attr('data-dt-column', iCol)
+		colEl: colElement
 	});
 	oSettings.columns.push(oCol);
 }
@@ -1260,9 +1258,8 @@ function _fnColumnSizes(settings) {
 
 		// Need to set the min-width, otherwise the browser might try to collapse
 		// it further
-		cols[i].colEl
-			.css('width', width)
-			.css('min-width', width);
+		cols[i].colEl.style.width = width;
+		cols[i].colEl.style.minWidth = width;
 	}
 }
 
@@ -2814,10 +2811,10 @@ function _fnStringToCss(s) {
 function _colGroup(settings) {
 	var cols = settings.columns;
 
-	settings.colgroup.empty();
+	settings.colgroup.innerHTML = '';
 
 	for (let i = 0; i < cols.length; i++) {
-		settings.colgroup.append(cols[i].colEl);
+		settings.colgroup.appendChild(cols[i].colEl);
 	}
 }
 // #endregion
@@ -4391,16 +4388,6 @@ _api_register('i18n()', function (token, def) {
 // #endregion
 
 /**
- * Version string for plug-ins to check compatibility. Allowed format is
- * `a.b.c-d` where: a:int, b:int, c:int, d:string(dev|beta|alpha). `d` is used
- * only for non-release builds. See https://semver.org/ for more information.
- *  @member
- *  @type string
- *  @default Version number
- */
-DataTable.version = "2.1.6";
-
-/**
  * Private data store, containing all of the settings objects that are
  * created for the tables on a given page.
  *
@@ -4804,7 +4791,6 @@ DataTable.defaults = {
 
 // #endregion
 // #region model.defaults.columns.js
-
 
 /*
  * Developer note - See note in model.defaults.js about the use of Hungarian
@@ -6026,15 +6012,5 @@ DataTable.feature.register('pageLength', function (settings, opts) {
 }, 'l');
 
 // #endregion
-
-// jQuery access
-$.fn.dataTable = DataTable;
-
-// Provide access to the host jQuery object (circular reference)
-DataTable.$ = $;
-
-// Legacy aliases
-$.fn.dataTableSettings = DataTable.settings;
-$.fn.dataTableExt = DataTable.ext;
 
 export default DataTable;
