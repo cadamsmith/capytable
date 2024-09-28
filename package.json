@@ -18,6 +18,7 @@
   "license": "MIT",
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.16.4",
+    "@changesets/cli": "^2.27.8",
     "cpy-cli": "^5.0.0",
     "esbuild": "^0.24.0",
     "prettier": "^3.3.3",
@@ -32,7 +33,9 @@
     "minify-js": "esbuild dist/js/capytable.js --minify --sourcemap --outfile=dist/js/capytable.min.js",
     "prepare-css": "npm run copy-css && npm run minify-css",
     "copy-css": "cpy 'src/capytable.css' dist/css --flat",
-    "minify-css": "esbuild dist/css/capytable.css --minify --sourcemap --outfile=dist/css/capytable.min.css"
+    "minify-css": "esbuild dist/css/capytable.css --minify --sourcemap --outfile=dist/css/capytable.min.css",
+    "prepublishOnly": "npm run ci",
+    "local-release": "npm run ci && changeset version && changeset publish"
   },
   "main": "dist/capytable.js"
 }
