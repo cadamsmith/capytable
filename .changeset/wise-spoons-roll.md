@@ -1,0 +1,5 @@
+---
+'capytable': minor
+---
+
+initial release
