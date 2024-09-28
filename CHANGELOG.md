@@ -1,5 +1,11 @@
 # capytable
 
+## 0.2.1
+
+### Patch Changes
+
+- 07f32b9: remove browser entry from package.json
+
 ## 0.2.0
 
 ### Minor Changes
