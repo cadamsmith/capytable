@@ -11,6 +11,7 @@ Gives HTML tables awesome capabilities like column ordering, searching, and pagi
 The code was originally sourced from https://github.com/DataTables/DataTablesSrc.
 
 Changes made:
+
 - most features/options dropped in order to get to a manageable starting point
 - Code modified to drop the jQuery dependency
 
