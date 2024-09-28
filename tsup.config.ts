@@ -1,8 +1,8 @@
 import { defineConfig, Options } from 'tsup';
 import { umdWrapper } from 'esbuild-plugin-umd-wrapper';
-import { umd, version } from './package.json';
+import { version } from './package.json';
 
-const clientName = umd;
+const clientName = 'capytable';
 
 const baseConfig: Options = {
   entry: {

@@ -16,7 +16,6 @@
     "src"
   ],
   "type": "module",
-  "umd": "capytable",
   "license": "MIT",
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.16.4",
@@ -38,6 +37,5 @@
     "lint": "tsc"
   },
   "main": "dist/capytable.min.js",
-  "browser": "dist/capytable.umd.min.js",
   "types": "dist/capytable.d.ts"
 }
