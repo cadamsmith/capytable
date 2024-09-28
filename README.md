@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/user-attachments/assets/80853121-fefe-4faf-a5bb-cf6518ead244" alt="capybara" width="200"></a>
+  <img src="https://github.com/user-attachments/assets/80853121-fefe-4faf-a5bb-cf6518ead244" alt="capybara" width="200" />
   <br>
   capytable
   <br>
