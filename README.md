@@ -8,6 +8,6 @@
 
 Gives HTML tables awesome capabilities like column ordering, searching, and pagination.
 
-The code is sourced from https://github.com/DataTables/DataTablesSrc.
+The code was originally sourced from https://github.com/DataTables/DataTablesSrc.
 
 The jQuery dependency has been dropped and most options / functionality removed.
