@@ -6,8 +6,8 @@
   <br>
 </h1>
 
-## Info
+Gives HTML tables awesome capabilities like column ordering, searching, and pagination.
 
 The code is sourced from https://github.com/DataTables/DataTablesSrc.
 
-The jquery dependency has been dropped and most options / functionality removed.
+The jQuery dependency has been dropped and most options / functionality removed.
