@@ -2,6 +2,8 @@
  * © SpryMedia Ltd - datatables.net/license
  */
 
+import './capytable.css';
+
 // #region Capytable
 class Capytable {
   constructor(id, options) {
@@ -2606,4 +2608,5 @@ Capytable.models.oSettings = {
 
 // #endregion
 
+export { Capytable };
 export default Capytable;

@@ -12,30 +12,32 @@
     "url": "git+https://github.com/cadamsmith/capytable.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "type": "module",
+  "umd": "capytable",
   "license": "MIT",
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.16.4",
     "@changesets/cli": "^2.27.8",
     "cpy-cli": "^5.0.0",
-    "esbuild": "^0.24.0",
+    "esbuild-plugin-umd-wrapper": "^3.0.0",
     "prettier": "^3.3.3",
+    "tsup": "^8.3.0",
     "typescript": "^5.6.2"
   },
   "scripts": {
-    "ci": "npm run build && npm run minify-js && npm run prepare-css && npm run check-format && npm run check-exports",
-    "build": "tsc",
+    "ci": "npm run build && npm run check-format && npm run check-exports && npm run lint",
+    "build": "tsup",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "check-exports": "attw --pack . --ignore-rules=cjs-resolves-to-esm",
-    "minify-js": "esbuild dist/js/capytable.js --minify --sourcemap --outfile=dist/js/capytable.min.js",
-    "prepare-css": "npm run copy-css && npm run minify-css",
-    "copy-css": "cpy 'src/capytable.css' dist/css --flat",
-    "minify-css": "esbuild dist/css/capytable.css --minify --sourcemap --outfile=dist/css/capytable.min.css",
     "prepublishOnly": "npm run ci",
-    "local-release": "npm run ci && changeset version && changeset publish"
+    "local-release": "npm run ci && changeset version && changeset publish",
+    "lint": "tsc"
   },
-  "main": "dist/capytable.js"
+  "main": "dist/capytable.min.js",
+  "browser": "dist/capytable.umd.min.js",
+  "types": "dist/capytable.d.ts"
 }
