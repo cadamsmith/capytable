@@ -6,7 +6,7 @@
   <br>
 </h1>
 
-<h4 align="center">JS Library for making HTML tables super awesome</h4>
+## Info
 
 The code is sourced from https://github.com/DataTables/DataTablesSrc.
 
