@@ -10,4 +10,8 @@ Gives HTML tables awesome capabilities like column ordering, searching, and pagi
 
 The code was originally sourced from https://github.com/DataTables/DataTablesSrc.
 
-The jQuery dependency has been dropped and most options / functionality removed.
+Changes made:
+- most features/options dropped in order to get to a manageable starting point
+- Code modified to drop the jQuery dependency
+
+Bear with me, I using this project to learn more about modern JavaScript.
