@@ -1,5 +1,13 @@
-# capytable
+<h1 align="center">
+  <br>
+  <a href="https://github.com/user-attachments/assets/80853121-fefe-4faf-a5bb-cf6518ead244" alt="capybara" width="200"></a>
+  <br>
+  capytable
+  <br>
+</h1>
 
-Trying to make a Vanilla JS datatables clone.
+<h4 align="center">JS Library for making HTML tables super awesome</h4>
 
-![image](https://github.com/user-attachments/assets/3986767d-120e-4c1a-a8d9-b2b675ab041a)
+The code is sourced from https://github.com/DataTables/DataTablesSrc.
+
+The jquery dependency has been dropped and most options / functionality removed.
