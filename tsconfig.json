@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "es2022",
     "allowJs": true,
     "noEmit": true,
     "module": "Preserve",
     "resolveJsonModule": true
   },
-  "include": ["src/capytable.js"]
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.json"]
 }
