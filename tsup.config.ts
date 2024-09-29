@@ -6,7 +6,7 @@ const clientName = 'capytable';
 
 const baseConfig: Options = {
   entry: {
-    ['capytable']: 'src/capytable.js',
+    ['capytable']: 'src/capytable.ts',
   },
   outDir: 'dist',
   outExtension({ format, options }) {
