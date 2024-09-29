@@ -29,6 +29,7 @@
   "scripts": {
     "ci": "npm run build && npm run check-format && npm run check-exports && npm run lint",
     "build": "tsup",
+    "release": "npm run build && changeset publish",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "check-exports": "attw --pack . --ignore-rules=cjs-resolves-to-esm",
