@@ -1,5 +1,11 @@
 # capytable
 
+## 0.3.0
+
+### Minor Changes
+
+- 6700f30: Convert source code to TypeScript
+
 ## 0.2.1
 
 ### Patch Changes
