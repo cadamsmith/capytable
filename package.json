@@ -37,5 +37,12 @@
     "lint": "tsc"
   },
   "main": "dist/capytable.min.js",
-  "types": "dist/capytable.d.ts"
+  "types": "dist/capytable.d.ts",
+  "keywords": [
+    "table",
+    "capytable",
+    "filter",
+    "sort",
+    "pagination"
+  ]
 }
