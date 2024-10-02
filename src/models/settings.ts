@@ -37,17 +37,11 @@ export class Settings implements ISettings {
 
   _reszEvt: boolean = false;
 
-  constructor(
-    searching: boolean,
-    paging: boolean,
-    ordering: boolean,
-    tableId: string,
-    elementRefs: { [id: string]: HTMLElement },
-  ) {
+  constructor(tableId: string, elementRefs: { [id: string]: HTMLElement }) {
     this.features = {
-      searching: searching,
-      paging: paging,
-      ordering: ordering,
+      searching: true,
+      paging: true,
+      ordering: true,
     };
 
     this.tableId = tableId;
