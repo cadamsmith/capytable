@@ -1,16 +1,18 @@
+import { ISettings } from '../models/interfaces';
 import { _fnDraw } from './draw';
 import { _fnCallbackFire, _fnLog } from './support';
 
 /**
  * Alter the display settings to change the page
- *  @param {object} settings Capytable settings object
- *  @param {string|int} action Paging action to take: "first", "previous",
- *    "next" or "last" or page number to jump to (integer)
- *  @param [bool] redraw Automatically draw the update or not
- *  @returns {bool} true page has changed, false - no change
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @param action Paging action to take: "first", "previous",
+ * "next" or "last" or page number to jump to (integer)
+ * @returns true if page has changed, false otherwise
  */
-export function _fnPageChange(settings, action) {
+export function _fnPageChange(
+  settings: ISettings,
+  action: string | number,
+): boolean {
   var start = settings._displayStart,
     len = settings._displayLength,
     records = settings.totalDisplayed();

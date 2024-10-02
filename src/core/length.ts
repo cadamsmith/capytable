@@ -1,6 +1,12 @@
+import { ISettings } from '../models/interfaces';
 import { _fnCallbackFire } from './support';
 
-export function _fnLengthChange(settings, val) {
+/**
+ * recalculate the display length and adjust the start point
+ * @param settings Capytable settings object
+ * @param val new display length
+ */
+export function _fnLengthChange(settings: ISettings, val: string): void {
   var len = parseInt(val, 10);
   settings._displayLength = len;
 

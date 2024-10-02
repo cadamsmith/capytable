@@ -168,10 +168,14 @@ export interface ISettings {
    */
   wrapperElement: HTMLDivElement | null;
 
+  _infoElement: HTMLDivElement | null;
+
   /**
    * Indicate if all required information has been read in
    */
   initialized: boolean;
+
+  _initComplete: boolean;
 
   /**
    * List of options that can be used for the user selectable length menu.

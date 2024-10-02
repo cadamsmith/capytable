@@ -28,6 +28,9 @@ export class Settings implements ISettings {
   _displayLength: number = 10;
   _displayStart: number = 0;
 
+  _infoElement: HTMLDivElement | null = null;
+  _initComplete: boolean = false;
+
   instance: any = null;
   lastOrder: [number, string] | null = null;
   colgroup: HTMLTableColElement;

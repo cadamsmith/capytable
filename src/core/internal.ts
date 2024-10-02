@@ -1,8 +1,12 @@
-export function _empty(d) {
-  return !d || d === true || d === '-';
+export function _empty(d: string) {
+  return !d || d === '-';
 }
 
-export function _pluck(arr, prop, prop2?) {
+export function _pluck(
+  arr: any[],
+  prop: string | number,
+  prop2?: string | number,
+) {
   return arr.reduce((out, item) => {
     if (prop2 !== undefined) {
       if (item && item[prop]) {
@@ -17,7 +21,7 @@ export function _pluck(arr, prop, prop2?) {
   }, []);
 }
 
-export function _range(len: number, start?: number) {
+export function _range(len: number, start?: number): number[] {
   var out: number[] = [];
   var end: number;
 
@@ -36,8 +40,8 @@ export function _range(len: number, start?: number) {
   return out;
 }
 
-export function _search(str) {
-  if (_empty(str) || typeof str !== 'string') {
+export function _search(str: string): string {
+  if (_empty(str)) {
     return str;
   }
 
@@ -49,13 +53,17 @@ export function _search(str) {
   return str;
 }
 
-// Replaceable function in api.util
-export function _stripHtml(input) {
-  if (!input || typeof input !== 'string') {
+/**
+ * strip HTML tags from a string
+ * @param input input string to sanitize
+ * @returns sanitized string
+ */
+export function _stripHtml(input: string): string {
+  if (!input) {
     return input;
   }
 
-  var previous;
+  let previous: string;
 
   const _re_html = /<([^>]*>)/g;
 
@@ -71,9 +79,13 @@ export function _stripHtml(input) {
   return previous;
 }
 
-// Remove diacritics from a string by decomposing it and then removing
-// non-ascii characters
-export function _normalize(str) {
+/**
+ * Remove diacritics from a string by decomposing it and then removing
+ * non-ascii characters
+ * @param str input string to normalize
+ * @returns normalized string
+ */
+export function _normalize(str: string): string {
   if (typeof str !== 'string') {
     return str;
   }
@@ -92,32 +104,23 @@ export function _normalize(str) {
  * to have a comma separator for the 'thousands' units (e.g. 1 million is
  * rendered as "1,000,000") to help readability for the end user. This
  * function will override the default method Capytable uses.
+ * @param toFormat number to format
+ * @returns formatted number
  */
-export function _formatNumber(toFormat) {
+export function _formatNumber(toFormat: number): string {
   return toFormat.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-export function _formatString(a) {
-  return _empty(a) && typeof a !== 'boolean'
-    ? ''
-    : typeof a === 'string'
-      ? a.toLowerCase()
-      : !a.toString
-        ? ''
-        : a.toString();
 }
 
 /**
  * Throttle the calls to a function. Arguments and context are maintained
  * for the throttled function.
- *
- * @param {function} fn Function to be called
- * @return {function} Wrapped function
+ * @param fn Function to be called
+ * @return Wrapped function
  */
-export function _throttle(fn) {
+export function _throttle(fn: () => void): () => void {
   var frequency = 200,
-    last,
-    timer;
+    last: number,
+    timer: string | number | NodeJS.Timeout;
 
   return function () {
     var that = this,
@@ -136,4 +139,22 @@ export function _throttle(fn) {
       fn.apply(that, args);
     }
   };
+}
+
+/**
+ * Append a CSS unit (only if required) to a string
+ * @param s value to css-ify
+ * @returns value with css unit
+ */
+export function _fnStringToCss(s: string | number) {
+  if (s === null) {
+    return '0px';
+  }
+
+  if (typeof s == 'number') {
+    return s < 0 ? '0px' : s + 'px';
+  }
+
+  // Check it has a unit character already
+  return s.match(/\d$/) ? s + 'px' : s;
 }

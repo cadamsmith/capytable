@@ -1,13 +1,13 @@
+import { ISettings } from '../models/interfaces';
 import { _fnGetCellData } from './data';
 import { _fnCallbackFire } from './support';
 
 /**
  * Filter the table using both the global filter and column based filtering
- *  @param {object} settings Capytable settings object
- *  @param {string} search filter string
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @param search filter string
  */
-export function _fnFilterComplete(settings, search) {
+export function _fnFilterComplete(settings: ISettings, search: string): void {
   // Check if any of the rows were invalidated
   _fnFilterData(settings);
 
@@ -46,8 +46,12 @@ export function _fnFilterComplete(settings, search) {
 var __filter_div = document.createElement('div');
 var __filter_div_textContent = __filter_div.textContent !== undefined;
 
-// Update the filtering data for each row if needed (by invalidation or first run)
-function _fnFilterData(settings) {
+/**
+ * Update the filtering data for each row if needed (by invalidation or first run)
+ * @param settings Capytable settings object
+ * @returns boolean if the data was invalidated
+ */
+function _fnFilterData(settings: ISettings): boolean {
   var columns = settings.columns;
   var data = settings.data;
   var column;

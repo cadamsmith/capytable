@@ -1,10 +1,11 @@
+import { ISettings } from '../models/interfaces';
 import { _fnColumnsFromHeader } from './columns';
 import { _fnGetCellData } from './data';
 import { _fnReDraw } from './draw';
-import { _formatString, _pluck } from './internal';
+import { _empty, _pluck } from './internal';
 import { _fnBindAction, _fnCallbackFire } from './support';
 
-export function _fnSortInit(settings) {
+export function _fnSortInit(settings: ISettings): void {
   const notSelector =
     ':not([data-dt-order="disable"]):not([data-dt-order="icon-only"])';
   const selector = `tr${notSelector} th${notSelector}, tr${notSelector} td${notSelector}`;
@@ -31,9 +32,10 @@ export function _fnSortInit(settings) {
 
 /**
  * Sort the display array to match the master's order
- * @param {*} settings
+ * @param settings Capytable settings object
+ * @param display Display array to sort
  */
-function _fnSortDisplay(settings, display) {
+function _fnSortDisplay(settings: ISettings, display: number[]): void {
   if (display.length < 2) {
     return;
   }
@@ -60,21 +62,21 @@ function _fnSortDisplay(settings, display) {
 
 /**
  * Change the order of the table
- *  @param {object} oSettings Capytable settings object
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @returns Array of the new display indexes
  */
-export function _fnSort(oSettings) {
+export function _fnSort(settings: ISettings): number[] {
   var aiOrig: any[] = [],
-    data = oSettings.data,
-    displayMaster = oSettings.displayMaster;
+    data = settings.data,
+    displayMaster = settings.displayMaster;
 
   // Allow a specific column to be sorted, which will _not_ alter the display
   // master
-  const aSort = oSettings.order;
+  const aSort = settings.order;
 
   if (aSort) {
     // Load the data needed for the sort, for each cell
-    _fnSortData(oSettings, aSort[0]);
+    _fnSortData(settings, aSort[0]);
 
     // Reset the initial positions on each pass so we get a stable sort
     for (let i = 0; i < displayMaster.length; i++) {
@@ -125,28 +127,29 @@ export function _fnSort(oSettings) {
     });
   }
 
-  _fnCallbackFire(oSettings, null, 'order', [oSettings, aSort]);
+  _fnCallbackFire(settings, null, 'order', [settings, aSort]);
 
   return displayMaster;
 }
 
 /**
  * Function to run on user sort request
- *  @param {object} settings Capytable settings object
- *  @param {int} colIdx column sorting index
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @param colIdx column sorting index
+ * @returns false if sorting is disabled for the column, otherwise true
  */
-function _fnSortAdd(settings, colIdx) {
+function _fnSortAdd(settings: ISettings, colIdx: number): boolean {
   var col = settings.columns[colIdx];
   var sorting = settings.order;
-  var nextSortIdx;
-  var next = function (a) {
-    var idx = a._idx;
-    if (idx === undefined) {
-      idx = settings.orderSequence.indexOf(a[1]);
-    }
 
-    return idx + 1 < settings.orderSequence.length ? idx + 1 : 0;
+  var next = function (dir: string) {
+    if (dir === 'asc') {
+      return 'desc';
+    } else if (dir === 'desc') {
+      return '';
+    } else {
+      return 'asc';
+    }
   };
 
   if (!col.orderable) {
@@ -156,26 +159,23 @@ function _fnSortAdd(settings, colIdx) {
   // If appending the sort then we are multi-column sorting
   if (sorting && sorting[0] == colIdx) {
     // Single column - already sorting on this column, modify the sort
-    nextSortIdx = next(sorting);
-
-    sorting[1] = settings.orderSequence[nextSortIdx];
-    sorting._idx = nextSortIdx;
+    sorting[1] = next(sorting[1]);
   } else {
     // Single column - sort only on this column
     sorting = [colIdx, settings.orderSequence[0]];
-    sorting._idx = 0;
   }
 
   settings.order = sorting;
+
+  return true;
 }
 
 /**
  * Set the sorting classes on table's body, Note: it is safe to call this function
  * when bSort and bSortClasses are false
- *  @param {object} oSettings Capytable settings object
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
  */
-export function _fnSortingClasses(settings) {
+export function _fnSortingClasses(settings: ISettings): void {
   const oldSort = settings.lastOrder;
   const sort = settings.order;
 
@@ -201,10 +201,8 @@ export function _fnSortingClasses(settings) {
 
 // Get the data to sort a column, be it from cache, fresh (populating the
 // cache), or from a sort formatter
-function _fnSortData(settings, colIdx) {
+function _fnSortData(settings: ISettings, colIdx: number): void {
   // Use / populate cache
-  var row, cellData;
-
   var data = settings.data;
 
   // iterate over the rows getting the data to be sorted
@@ -214,16 +212,16 @@ function _fnSortData(settings, colIdx) {
       continue;
     }
 
-    row = data[i];
+    const row = data[i];
 
     if (!row._sortData) {
       row._sortData = [];
     }
 
     if (!row._sortData[colIdx]) {
-      cellData = _fnGetCellData(settings, i, colIdx, 'sort');
+      const cellData = _fnGetCellData(settings, i, colIdx, 'sort');
 
-      row._sortData[colIdx] = _formatString(cellData);
+      row._sortData[colIdx] = _empty(cellData) ? '' : cellData.toLowerCase();
     }
   }
 }

@@ -1,3 +1,4 @@
+import { ISettings } from '../models/interfaces';
 import { _fnAdjustColumnSizing } from './columns';
 import { _fnAddTr } from './data';
 import {
@@ -11,10 +12,9 @@ import { _fnSortInit } from './sort';
 
 /**
  * Draw the table for the first time, adding all required features
- *  @param {object} settings Capytable settings object
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
  */
-export function _fnInitialise(settings) {
+export function _fnInitialise(settings: ISettings) {
   // Build the header / footer for the table
   _fnBuildHeader(settings);
   _fnBuildFooter(settings);
