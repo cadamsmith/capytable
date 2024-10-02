@@ -1,5 +1,5 @@
 import { ISettings } from '../models/interfaces';
-import { _formatNumber } from './internal';
+import { formatNumber } from './internal';
 
 /**
  * Log an error message
@@ -7,7 +7,7 @@ import { _formatNumber } from './internal';
  * @param msg error message
  * @param tn Technical note id to get more information about the error.
  */
-export function _fnLog(settings: ISettings, msg: string, tn: number) {
+export function logError(settings: ISettings, msg: string, tn: number) {
   msg =
     'Capytable warning: ' +
     (settings ? 'table id=' + settings.tableId + ' - ' : '') +
@@ -32,7 +32,7 @@ export function _fnLog(settings: ISettings, msg: string, tn: number) {
  *   to pass to the triggered function
  * @param fn Callback function for when the event is triggered
  */
-export function _fnBindAction(n: HTMLElement, selector: string, fn): void {
+export function bindAction(n: HTMLElement, selector: string, fn): void {
   delegateEvent(n, 'click', selector, fn);
 
   delegateEvent(n, 'keypress', selector, function (e) {
@@ -62,7 +62,7 @@ function delegateEvent(
   });
 }
 
-export function _fnBindActionWithData(n: HTMLElement, fn): void {
+export function bindActionWithData(n: HTMLElement, fn): void {
   n.addEventListener('click', (e) => fn(e));
   n.addEventListener('keypress', (e) => {
     if (e.which === 13) {
@@ -87,7 +87,7 @@ export function _fnBindActionWithData(n: HTMLElement, fn): void {
  *      trigger
  *  @param bubbles True if the event should bubble
  */
-export function _fnCallbackFire(
+export function callbackFire(
   settings: ISettings,
   callbackArr: string,
   eventName: string,
@@ -121,7 +121,7 @@ export function _fnCallbackFire(
  * @param str String with values to replace
  * @returns replaced string
  */
-export function _fnMacros(settings: ISettings, str: string): string {
+export function applyLanguageMacros(settings: ISettings, str: string): string {
   // When infinite scrolling, we are always starting at 1. _displayStart is
   // used only internally
   var start = settings._displayStart + 1,
@@ -131,12 +131,12 @@ export function _fnMacros(settings: ISettings, str: string): string {
     all = len === -1;
 
   return str
-    .replace(/_START_/g, _formatNumber(start))
-    .replace(/_END_/g, _formatNumber(settings.displayEnd()))
-    .replace(/_MAX_/g, _formatNumber(max))
-    .replace(/_TOTAL_/g, _formatNumber(vis))
-    .replace(/_PAGE_/g, _formatNumber(all ? 1 : Math.ceil(start / len)))
-    .replace(/_PAGES_/g, _formatNumber(all ? 1 : Math.ceil(vis / len)))
+    .replace(/_START_/g, formatNumber(start))
+    .replace(/_END_/g, formatNumber(settings.displayEnd()))
+    .replace(/_MAX_/g, formatNumber(max))
+    .replace(/_TOTAL_/g, formatNumber(vis))
+    .replace(/_PAGE_/g, formatNumber(all ? 1 : Math.ceil(start / len)))
+    .replace(/_PAGES_/g, formatNumber(all ? 1 : Math.ceil(vis / len)))
     .replace(/_ENTRIES_/g, 'entries')
     .replace(/_ENTRIES-MAX_/g, 'entries')
     .replace(/_ENTRIES-TOTAL_/g, 'entries');

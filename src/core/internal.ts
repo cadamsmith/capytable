@@ -1,8 +1,8 @@
-export function _empty(d: string) {
+export function isEmpty(d: string) {
   return !d || d === '-';
 }
 
-export function _pluck(
+export function pluck(
   arr: any[],
   prop: string | number,
   prop2?: string | number,
@@ -21,7 +21,7 @@ export function _pluck(
   }, []);
 }
 
-export function _range(len: number, start?: number): number[] {
+export function range(len: number, start?: number): number[] {
   var out: number[] = [];
   var end: number;
 
@@ -40,15 +40,15 @@ export function _range(len: number, start?: number): number[] {
   return out;
 }
 
-export function _search(str: string): string {
-  if (_empty(str)) {
+export function search(str: string): string {
+  if (isEmpty(str)) {
     return str;
   }
 
   const _re_new_lines = /[\r\n\u2028]/g;
 
   str = str.replace(_re_new_lines, ' ');
-  str = _normalize(str);
+  str = normalize(str);
 
   return str;
 }
@@ -58,7 +58,7 @@ export function _search(str: string): string {
  * @param input input string to sanitize
  * @returns sanitized string
  */
-export function _stripHtml(input: string): string {
+export function stripHtml(input: string): string {
   if (!input) {
     return input;
   }
@@ -85,11 +85,7 @@ export function _stripHtml(input: string): string {
  * @param str input string to normalize
  * @returns normalized string
  */
-export function _normalize(str: string): string {
-  if (typeof str !== 'string') {
-    return str;
-  }
-
+export function normalize(str: string): string {
   // It is faster to just run `normalize` than it is to check if
   // we need to with a regex!
   var res = str.normalize('NFD');
@@ -107,7 +103,7 @@ export function _normalize(str: string): string {
  * @param toFormat number to format
  * @returns formatted number
  */
-export function _formatNumber(toFormat: number): string {
+export function formatNumber(toFormat: number): string {
   return toFormat.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
@@ -117,7 +113,7 @@ export function _formatNumber(toFormat: number): string {
  * @param fn Function to be called
  * @return Wrapped function
  */
-export function _throttle(fn: () => void): () => void {
+export function throttle(fn: () => void): () => void {
   var frequency = 200,
     last: number,
     timer: string | number | NodeJS.Timeout;
@@ -146,7 +142,7 @@ export function _throttle(fn: () => void): () => void {
  * @param s value to css-ify
  * @returns value with css unit
  */
-export function _fnStringToCss(s: string | number) {
+export function toCssUnits(s: string | number) {
   if (s === null) {
     return '0px';
   }

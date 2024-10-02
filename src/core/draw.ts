@@ -1,11 +1,11 @@
 import { ISettings } from '../models/interfaces';
-import { _fnVisibleColumns } from './columns';
-import { _fnGetCellData } from './data';
-import { _renderFeature } from './features';
-import { _fnFilterComplete } from './filter';
-import { _pluck } from './internal';
-import { _fnSort } from './sort';
-import { _fnCallbackFire, _fnLog } from './support';
+import { countVisibleColumns } from './columns';
+import { getCellData } from './data';
+import { renderFeature } from './features';
+import { filterComplete } from './filter';
+import { pluck } from './internal';
+import { sort } from './sort';
+import { callbackFire, logError } from './support';
 
 /**
  * Render and cache a row's display data for the columns, if required
@@ -13,10 +13,7 @@ import { _fnCallbackFire, _fnLog } from './support';
  * @param rowIdx - data row id
  * @returns that row's display data
  */
-export function _fnGetRowDisplay(
-  settings: ISettings,
-  rowIdx: number,
-): string[] {
+export function getRowDisplay(settings: ISettings, rowIdx: number): string[] {
   let rowModal = settings.data[rowIdx];
   let columns = settings.columns;
 
@@ -26,7 +23,7 @@ export function _fnGetRowDisplay(
 
     for (let colIdx = 0; colIdx < columns.length; colIdx++) {
       rowModal.displayData.push(
-        _fnGetCellData(settings, rowIdx, colIdx, 'display'),
+        getCellData(settings, rowIdx, colIdx, 'display'),
       );
     }
   }
@@ -42,7 +39,7 @@ export function _fnGetRowDisplay(
  * Capytable will create a row automatically
  * @param anTds - Array of TD|TH elements for the row - must be given if trElement is.
  */
-export function _fnCreateTr(
+export function createRow(
   settings: ISettings,
   iRow: number,
   trElement: HTMLTableRowElement,
@@ -75,7 +72,7 @@ export function _fnCreateTr(
     const nTd = anTds[i];
 
     if (!nTd) {
-      _fnLog(settings, 'Incorrect column count', 18);
+      logError(settings, 'Incorrect column count', 18);
     }
 
     cells.push(nTd);
@@ -86,7 +83,7 @@ export function _fnCreateTr(
  * Create the HTML header for the table
  *  @param settings - Capytable settings object
  */
-export function _fnBuildHeader(settings: ISettings): void {
+export function buildHeader(settings: ISettings): void {
   var columns = settings.columns;
   var target = settings.tHeadElement;
 
@@ -118,7 +115,7 @@ export function _fnBuildHeader(settings: ISettings): void {
     }
   }
 
-  settings.header = _fnDetectHeader(settings, target);
+  settings.header = detectHeader(settings, target);
 
   // ARIA role for the rows
   [...target.querySelectorAll(':scope > tr')].forEach((el) =>
@@ -130,7 +127,7 @@ export function _fnBuildHeader(settings: ISettings): void {
     const cell = el as HTMLTableCellElement;
 
     if (!settings.features.ordering) {
-      cell.classList.add('dt-orderable-none');
+      cell.classList.add('ct-orderable-none');
     }
 
     // No additional mark-up required
@@ -145,9 +142,9 @@ export function _fnBuildHeader(settings: ISettings): void {
         return;
       }
 
-      cell.classList.remove('dt-ordering-asc', 'dt-ordering-desc');
-      cell.classList.add('dt-orderable-asc');
-      cell.classList.add('dt-orderable-desc');
+      cell.classList.remove('ct-ordering-asc', 'ct-ordering-desc');
+      cell.classList.add('ct-orderable-asc');
+      cell.classList.add('ct-orderable-desc');
 
       // Determine if all of the columns that this cell covers are included in the
       // current ordering
@@ -155,22 +152,22 @@ export function _fnBuildHeader(settings: ISettings): void {
 
       if (isOrdering) {
         if (sorting[1] === 'asc') {
-          cell.classList.add('dt-ordering-asc');
+          cell.classList.add('ct-ordering-asc');
         } else if (sorting[1] === 'desc') {
-          cell.classList.add('dt-ordering-desc');
+          cell.classList.add('ct-ordering-desc');
         }
       }
     });
   });
 
-  _fnDrawHead(settings.header);
+  drawHead(settings.header);
 }
 
 /**
  * Create the HTML footer for the table
  *  @param settings - Capytable settings object
  */
-export function _fnBuildFooter(settings: ISettings): void {
+export function buildFooter(settings: ISettings): void {
   var columns = settings.columns;
   var target = settings.tFootElement;
 
@@ -180,7 +177,7 @@ export function _fnBuildFooter(settings: ISettings): void {
   }
 
   // If no cells yet and we have content for them, then create
-  if (_pluck(settings.columns, 'footer').join('')) {
+  if (pluck(settings.columns, 'footer').join('')) {
     const row = [...target.querySelectorAll('tr')];
     const firstRow = row[0];
 
@@ -204,7 +201,7 @@ export function _fnBuildFooter(settings: ISettings): void {
     }
   }
 
-  settings.footer = _fnDetectHeader(settings, target);
+  settings.footer = detectHeader(settings, target);
 
   // ARIA role for the rows
   [...target.querySelectorAll(':scope > tr')].forEach((el) =>
@@ -217,14 +214,14 @@ export function _fnBuildFooter(settings: ISettings): void {
   // [...target.querySelectorAll(':scope > tr > th, :scope > tr > td')]
   // 	.forEach(el => _fnRenderer('footer')(settings, el));
 
-  _fnDrawHead(settings.footer);
+  drawHead(settings.footer);
 }
 
 /**
  * Insert the required TR nodes into the table for display
  *  @param settings - Capytable settings object
  */
-export function _fnDraw(settings: ISettings): void {
+export function draw(settings: ISettings): void {
   var anRows: any[] = [];
   var iRowCount = 0;
   var aiDisplay = settings.display;
@@ -246,20 +243,20 @@ export function _fnDraw(settings: ISettings): void {
       iRowCount++;
     }
   } else {
-    anRows[0] = _emptyRow(settings);
+    anRows[0] = makeEmptyRow(settings);
   }
 
   body.replaceChildren(...anRows);
 
   // Empty table needs a specific class
   if (!settings.tFootElement.querySelector('tr')) {
-    settings.wrapperElement.classList.add('dt-empty-footer');
+    settings.wrapperElement.classList.add('ct-empty-footer');
   } else {
-    settings.wrapperElement.classList.remove('dt-empty-footer');
+    settings.wrapperElement.classList.remove('ct-empty-footer');
   }
 
   /* Call all required callback functions for the end of a draw */
-  _fnCallbackFire(settings, 'drawCallbacks', 'draw', [settings], true);
+  callbackFire(settings, 'drawCallbacks', 'draw', [settings], true);
 }
 
 /**
@@ -267,16 +264,16 @@ export function _fnDraw(settings: ISettings): void {
  *  @param settings - Capytable settings object
  *  @param recompute - indicates whether to recompute the table data or not
  */
-export function _fnReDraw(settings: ISettings, recompute = true): void {
+export function redraw(settings: ISettings, recompute = true): void {
   const features = settings.features;
 
   if (recompute) {
     if (features.ordering) {
-      _fnSort(settings);
+      sort(settings);
     }
 
     if (features.searching) {
-      _fnFilterComplete(settings, settings.searchText);
+      filterComplete(settings, settings.searchText);
     } else {
       // No filtering, so we want to just use the display master
       settings.display = settings.displayMaster.slice();
@@ -285,52 +282,52 @@ export function _fnReDraw(settings: ISettings, recompute = true): void {
 
   settings._displayStart = 0;
 
-  _fnDraw(settings);
+  draw(settings);
 }
 
 /**
  * Add the options to the page HTML for the table
  * @param settings Capytable settings object
  */
-export function _fnAddOptionsHtml(settings: ISettings): void {
+export function addOptionsHtml(settings: ISettings): void {
   const table = settings.tableElement;
 
   // Wrapper div around everything Capytable controls
   const container = document.createElement('div');
   container.id = settings.tableId + '_wrapper';
-  container.className = 'dt-container';
+  container.className = 'ct-container';
   table.parentNode.insertBefore(container, table);
 
   settings.wrapperElement = container;
 
   // top row
-  const topRow = _fnRenderLayoutRow();
+  const topRow = renderLayoutRow();
 
-  const pageLength = _renderFeature(settings, 'pageLength')!;
-  pageLength.className = 'dt-layout-cell dt-layout-start';
+  const pageLength = renderFeature(settings, 'pageLength')!;
+  pageLength.className = 'ct-layout-cell ct-layout-start';
   topRow.appendChild(pageLength);
 
-  const search = _renderFeature(settings, 'search')!;
-  search.className = 'dt-layout-cell dt-layout-end';
+  const search = renderFeature(settings, 'search')!;
+  search.className = 'ct-layout-cell ct-layout-end';
   topRow.appendChild(search);
 
   // middle row
-  const middleRow = _fnRenderLayoutRow(true);
+  const middleRow = renderLayoutRow(true);
 
   const div = document.createElement('div');
-  div.className = 'dt-layout-cell dt-layout-full';
+  div.className = 'ct-layout-cell ct-layout-full';
   div.appendChild(settings.tableElement);
   middleRow.appendChild(div);
 
   // bottom row
-  const bottomRow = _fnRenderLayoutRow();
+  const bottomRow = renderLayoutRow();
 
-  const info = _renderFeature(settings, 'info')!;
-  info.className = 'dt-layout-cell dt-layout-start';
+  const info = renderFeature(settings, 'info')!;
+  info.className = 'ct-layout-cell ct-layout-start';
   bottomRow.appendChild(info);
 
-  const paging = _renderFeature(settings, 'paging')!;
-  paging.className = 'dt-layout-cell dt-layout-end';
+  const paging = renderFeature(settings, 'paging')!;
+  paging.className = 'ct-layout-cell ct-layout-end';
   bottomRow.appendChild(paging);
 
   // add rows to container
@@ -371,7 +368,7 @@ export function detectHeaderLength(thead: HTMLTableSectionElement): number {
  * Draw the header (or footer) element based on the column visibility states.
  * @param source - Layout array from _fnDetectHeader
  */
-function _fnDrawHead(source): void {
+function drawHead(source): void {
   if (!source) {
     return;
   }
@@ -394,7 +391,7 @@ function _fnDrawHead(source): void {
  * @param settings - Capytable settings object
  * @returns empty row element
  */
-function _emptyRow(settings: ISettings): HTMLTableRowElement {
+function makeEmptyRow(settings: ISettings): HTMLTableRowElement {
   let zeroVerbiage = 'No matching records found';
 
   if (settings.total() === 0) {
@@ -402,8 +399,8 @@ function _emptyRow(settings: ISettings): HTMLTableRowElement {
   }
 
   const td = document.createElement('td');
-  td.setAttribute('colSpan', _fnVisibleColumns(settings).toString());
-  td.className = 'dt-empty';
+  td.setAttribute('colSpan', countVisibleColumns(settings).toString());
+  td.className = 'ct-empty';
   td.innerHTML = zeroVerbiage;
 
   const tr = document.createElement('tr');
@@ -417,12 +414,12 @@ function _emptyRow(settings: ISettings): HTMLTableRowElement {
  * @param isTable whether the row is a table row or not
  * @returns the row layout div element
  */
-function _fnRenderLayoutRow(isTable = false): HTMLDivElement {
+function renderLayoutRow(isTable = false): HTMLDivElement {
   const row = document.createElement('div');
-  row.className = 'dt-layout-row';
+  row.className = 'ct-layout-row';
 
   if (isTable) {
-    row.className += 'dt-layout-table';
+    row.className += 'ct-layout-table';
   }
 
   return row;
@@ -437,7 +434,7 @@ function _fnRenderLayoutRow(isTable = false): HTMLDivElement {
  * @param thead The header/footer element for the table
  * @returns Calculated layout array
  */
-function _fnDetectHeader(settings: ISettings, thead: HTMLTableSectionElement) {
+function detectHeader(settings: ISettings, thead: HTMLTableSectionElement) {
   var columns = settings.columns;
   var rows = thead.querySelectorAll(':scope > tr');
   var isHeader = thead && thead.nodeName.toLowerCase() === 'thead';
@@ -469,16 +466,16 @@ function _fnDetectHeader(settings: ISettings, thead: HTMLTableSectionElement) {
         columnDef.originalWidth = columnDef.width || width;
 
         // Wrap the column title so we can write to it in future
-        if (!cell.querySelector('span.dt-column-title')) {
+        if (!cell.querySelector('span.ct-column-title')) {
           const span = document.createElement('span');
-          span.classList.add('dt-column-title');
+          span.classList.add('ct-column-title');
           span.replaceChildren(...cell.childNodes);
           cell.appendChild(span);
         }
 
-        if (isHeader && !cell.querySelector('span.dt-column-order')) {
+        if (isHeader && !cell.querySelector('span.ct-column-order')) {
           const span = document.createElement('span');
-          span.classList.add('dt-column-order');
+          span.classList.add('ct-column-order');
           cell.appendChild(span);
         }
 
@@ -487,7 +484,7 @@ function _fnDetectHeader(settings: ISettings, thead: HTMLTableSectionElement) {
 
         layout[i].row = row;
 
-        cell.setAttribute('data-dt-column', column.toString());
+        cell.setAttribute('data-ct-column', column.toString());
 
         column++;
       }

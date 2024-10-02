@@ -1,10 +1,14 @@
 import { ISettings } from '../models/interfaces';
-import { _fnDraw } from './draw';
-import { _fnFilterComplete } from './filter';
-import { _formatNumber, _range } from './internal';
-import { _fnLengthChange } from './length';
-import { _fnPageChange } from './page';
-import { _fnBindActionWithData, _fnCallbackFire, _fnMacros } from './support';
+import { draw } from './draw';
+import { filterComplete } from './filter';
+import { formatNumber, range } from './internal';
+import { changeLength } from './length';
+import { changePage } from './page';
+import {
+  bindActionWithData,
+  callbackFire,
+  applyLanguageMacros,
+} from './support';
 
 /**
  * Render a feature element
@@ -12,20 +16,20 @@ import { _fnBindActionWithData, _fnCallbackFire, _fnMacros } from './support';
  * @param feature name of the feature to render
  * @returns div element containing the feature, or null if not a valid feature
  */
-export function _renderFeature(
+export function renderFeature(
   settings: ISettings,
   feature: string,
 ): HTMLDivElement {
   let element: HTMLDivElement;
 
   if (feature === 'info') {
-    element = _renderInfo(settings);
+    element = renderInfo(settings);
   } else if (feature === 'pageLength') {
-    element = _renderPageLength(settings);
+    element = renderPageLength(settings);
   } else if (feature === 'paging') {
-    element = _renderPaging(settings);
+    element = renderPaging(settings);
   } else if (feature === 'search') {
-    element = _renderSearch(settings);
+    element = renderSearch(settings);
   } else {
     console.error(`Feature ${feature} not found`);
     return null;
@@ -42,15 +46,15 @@ export function _renderFeature(
  * @param settings Capytable settings object
  * @returns div element containing the info element
  */
-function _renderInfo(settings: ISettings): HTMLDivElement {
+function renderInfo(settings: ISettings): HTMLDivElement {
   const tid = settings.tableId;
 
   const n = document.createElement('div');
-  n.className = 'dt-info';
+  n.className = 'ct-info';
 
   // Update display on each draw
   settings.drawCallbacks.push(function (s: ISettings) {
-    _fnUpdateInfo(s, n);
+    updateInfo(s, n);
   });
 
   // For the first info display in the table, we add a callback and aria information.
@@ -72,7 +76,7 @@ function _renderInfo(settings: ISettings): HTMLDivElement {
  * Update the information elements in the display
  * @param settings Capytable settings object
  */
-function _fnUpdateInfo(settings: ISettings, node: HTMLDivElement): void {
+function updateInfo(settings: ISettings, node: HTMLDivElement): void {
   var max = settings.total(),
     total = settings.totalDisplayed(),
     out = total
@@ -85,16 +89,16 @@ function _fnUpdateInfo(settings: ISettings, node: HTMLDivElement): void {
   }
 
   // Convert the macros
-  out = _fnMacros(settings, out);
+  out = applyLanguageMacros(settings, out);
 
   node.innerHTML = out;
 
-  _fnCallbackFire(settings, null, 'info', [settings, node, out]);
+  callbackFire(settings, null, 'info', [settings, node, out]);
 }
 
 var __lengthCounter = 0;
 
-function _renderPageLength(settings: ISettings): HTMLDivElement {
+function renderPageLength(settings: ISettings): HTMLDivElement {
   var features = settings.features;
 
   // For compatibility with the legacy `pageLength` top level option
@@ -115,7 +119,7 @@ function _renderPageLength(settings: ISettings): HTMLDivElement {
   // Wrapper element - use a span as a holder for where the select will go
   var tmpId = `tmp-` + +new Date();
   var div = document.createElement('div');
-  div.classList.add('dt-length');
+  div.classList.add('ct-length');
   div.innerHTML = str.replace('_MENU_', `<span id="${tmpId}"></span>`);
 
   // Save text node content for macro updating
@@ -132,7 +136,7 @@ function _renderPageLength(settings: ISettings): HTMLDivElement {
   // Update the label text in case it has an entries value
   const updateEntries = function () {
     textNodes.forEach(function (node) {
-      node.el.textContent = _fnMacros(settings, node.text);
+      node.el.textContent = applyLanguageMacros(settings, node.text);
     });
   };
 
@@ -140,17 +144,17 @@ function _renderPageLength(settings: ISettings): HTMLDivElement {
   const select = document.createElement('select');
   select.setAttribute('name', tableId + '_length');
   select.setAttribute('aria-controls', tableId);
-  select.className = 'dt-input';
+  select.className = 'ct-input';
 
   for (let i = 0; i < menu.length; i++) {
-    select[i] = new Option(_formatNumber(menu[i]), menu[i].toString());
+    select[i] = new Option(formatNumber(menu[i]), menu[i].toString());
   }
 
   // add for and id to label and input
   div
     .querySelector('label')!
-    .setAttribute('for', 'dt-length-' + __lengthCounter);
-  select.id = 'dt-length-' + __lengthCounter;
+    .setAttribute('for', 'ct-length-' + __lengthCounter);
+  select.id = 'ct-length-' + __lengthCounter;
   __lengthCounter++;
 
   // Swap in the select list
@@ -160,8 +164,8 @@ function _renderPageLength(settings: ISettings): HTMLDivElement {
   // reference is broken by the use of outerHTML
   select.value = settings._displayLength.toString();
   select.addEventListener('change', function () {
-    _fnLengthChange(settings, this.value);
-    _fnDraw(settings);
+    changeLength(settings, this.value);
+    draw(settings);
   });
 
   // Update node value whenever anything changes the table's length
@@ -181,7 +185,7 @@ function _renderPageLength(settings: ISettings): HTMLDivElement {
   return div;
 }
 
-function _renderPaging(settings: ISettings): HTMLDivElement {
+function renderPaging(settings: ISettings): HTMLDivElement {
   // Don't show the paging input if the table doesn't have paging enabled
   if (!settings.features.paging) {
     return null;
@@ -189,12 +193,12 @@ function _renderPaging(settings: ISettings): HTMLDivElement {
 
   // create the host element for the controls
   const host = document.createElement('div');
-  host.classList.add('dt-paging');
+  host.classList.add('ct-paging');
   const nav = document.createElement('nav');
   nav.setAttribute('aria-label', 'pagination');
   host.appendChild(nav);
 
-  var draw = () => _pagingDraw(settings, nav, 7);
+  var draw = () => pagingDraw(settings, nav, 7);
 
   settings.drawCallbacks.push(draw);
 
@@ -204,7 +208,7 @@ function _renderPaging(settings: ISettings): HTMLDivElement {
   return host;
 }
 
-function _pagingDraw(
+function pagingDraw(
   settings: ISettings,
   host: HTMLElement,
   buttons: number,
@@ -231,7 +235,7 @@ function _pagingDraw(
     pages = all ? 1 : Math.ceil(visRecords / len),
     buttonArray = defaultPaging
       .map(function (val) {
-        return val === 'numbers' ? _pagingNumbers(page, pages, buttons) : val;
+        return val === 'numbers' ? pagingNumbers(page, pages, buttons) : val;
       })
       .flat();
 
@@ -240,8 +244,8 @@ function _pagingDraw(
   for (var i = 0; i < buttonArray.length; i++) {
     var button = buttonArray[i];
 
-    var btnInfo = _pagingButtonInfo(button, page, pages);
-    var btn = _renderPagingButton(
+    var btnInfo = pagingButtonInfo(button, page, pages);
+    var btn = renderPagingButton(
       button,
       btnInfo.display,
       btnInfo.active,
@@ -260,7 +264,7 @@ function _pagingDraw(
     btn.setAttribute('aria-disabled', btnInfo.disabled.toString());
     btn.setAttribute('aria-current', btnInfo.active ? 'page' : null);
     btn.setAttribute('aria-label', ariaLabel);
-    btn.setAttribute('data-dt-idx', ariaLabel);
+    btn.setAttribute('data-ct-idx', ariaLabel);
     btn.setAttribute('tabIndex', btnInfo.disabled ? '-1' : null);
 
     if (typeof button !== 'number') {
@@ -268,10 +272,10 @@ function _pagingDraw(
     }
 
     const action = button;
-    _fnBindActionWithData(btn, function (e: Event) {
+    bindActionWithData(btn, function (e: Event) {
       e.preventDefault();
 
-      _fnPageChange(settings, action);
+      changePage(settings, action);
     });
 
     buttonEls.push(btn);
@@ -282,20 +286,20 @@ function _pagingDraw(
   host.replaceChildren(...buttonEls);
 
   if (activeEl) {
-    const idx = activeEl.dataset['dt-idx'];
+    const idx = activeEl.dataset['ct-idx'];
 
-    const focusEl = host.querySelector(`[data-dt-idx=${idx}]`) as HTMLElement;
+    const focusEl = host.querySelector(`[data-ct-idx=${idx}]`) as HTMLElement;
     focusEl.focus();
   }
 }
 
-function _renderPagingButton(
+function renderPagingButton(
   buttonType: string,
   content: string,
   active: boolean,
   disabled: boolean,
 ): HTMLSpanElement | HTMLButtonElement {
-  var btnClasses = ['dt-paging-button'];
+  var btnClasses = ['ct-paging-button'];
   if (active) {
     btnClasses.push('current');
   }
@@ -327,7 +331,7 @@ function _renderPagingButton(
  * @param pages Number of pages
  * @returns Info object
  */
-function _pagingButtonInfo(
+function pagingButtonInfo(
   button: string | number,
   page: number,
   pages: number,
@@ -378,7 +382,7 @@ function _pagingButtonInfo(
 
     default:
       if (typeof button === 'number') {
-        o.display = _formatNumber(button + 1);
+        o.display = formatNumber(button + 1);
 
         if (page === button) {
           o.active = true;
@@ -397,18 +401,14 @@ function _pagingButtonInfo(
  * @param buttons Target number of number buttons
  * @returns Buttons to show
  */
-function _pagingNumbers(
-  page: number,
-  pages: number,
-  buttons: number,
-): string[] {
+function pagingNumbers(page: number, pages: number, buttons: number): string[] {
   var numbers: any[] = [],
     half = Math.floor(buttons / 2),
     before = 2,
     after = 1;
 
   if (pages <= buttons) {
-    numbers = _range(0, pages);
+    numbers = range(0, pages);
   } else if (buttons === 1) {
     // Single button - current page only
     numbers = [page];
@@ -417,23 +417,23 @@ function _pagingNumbers(
     if (page <= 1) {
       numbers = [0, 1, 'ellipsis'];
     } else if (page >= pages - 2) {
-      numbers = _range(pages - 2, pages);
+      numbers = range(pages - 2, pages);
       numbers.unshift('ellipsis');
     } else {
       numbers = ['ellipsis', page, 'ellipsis'];
     }
   } else if (page <= half) {
-    numbers = _range(0, buttons - before);
+    numbers = range(0, buttons - before);
     numbers.push('ellipsis');
 
     numbers.push(pages - 1);
   } else if (page >= pages - 1 - half) {
-    numbers = _range(pages - (buttons - before), pages);
+    numbers = range(pages - (buttons - before), pages);
     numbers.unshift('ellipsis');
 
     numbers.unshift(0);
   } else {
-    numbers = _range(page - half + before, page + half - after);
+    numbers = range(page - half + before, page + half - after);
     numbers.push('ellipsis');
     numbers.unshift('ellipsis');
 
@@ -446,7 +446,7 @@ function _pagingNumbers(
 
 var __searchCounter = 0;
 
-function _renderSearch(settings: ISettings): HTMLDivElement {
+function renderSearch(settings: ISettings): HTMLDivElement {
   // Don't show the input if filtering isn't available on the table
   if (!settings.features.searching) {
     return null;
@@ -454,7 +454,7 @@ function _renderSearch(settings: ISettings): HTMLDivElement {
 
   var tableId = settings.tableId;
   var previousSearch = settings.searchText;
-  var input = '<input type="search" class="dt-input"/>';
+  var input = '<input type="search" class="ct-input"/>';
 
   // We can put the <input> outside of the label if it is at the start or end
   // which helps improve accessability (not all screen readers like implicit
@@ -462,16 +462,16 @@ function _renderSearch(settings: ISettings): HTMLDivElement {
   var str = '<label>Search:</label>_INPUT_';
 
   const filter = document.createElement('div');
-  filter.classList.add('dt-search');
+  filter.classList.add('ct-search');
   filter.innerHTML = str.replace(/_INPUT_/, input);
 
   // add for and id to label and input
   filter
     .querySelector('label')!
-    .setAttribute('for', 'dt-search-' + __searchCounter);
+    .setAttribute('for', 'ct-search-' + __searchCounter);
   filter
     .querySelector('input')!
-    .setAttribute('id', 'dt-search-' + __searchCounter);
+    .setAttribute('id', 'ct-search-' + __searchCounter);
   __searchCounter++;
 
   var searchFn = function () {
@@ -481,11 +481,11 @@ function _renderSearch(settings: ISettings): HTMLDivElement {
     if (val != previousSearch) {
       previousSearch = val;
 
-      _fnFilterComplete(settings, previousSearch);
+      filterComplete(settings, previousSearch);
 
       // Need to redraw, without resorting
       settings._displayStart = 0;
-      _fnDraw(settings);
+      draw(settings);
     }
   };
 

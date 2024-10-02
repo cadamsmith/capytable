@@ -1,31 +1,31 @@
 import { ISettings } from '../models/interfaces';
-import { _fnColumnsFromHeader } from './columns';
-import { _fnGetCellData } from './data';
-import { _fnReDraw } from './draw';
-import { _empty, _pluck } from './internal';
-import { _fnBindAction, _fnCallbackFire } from './support';
+import { getColumnsFromHeader } from './columns';
+import { getCellData } from './data';
+import { redraw } from './draw';
+import { isEmpty, pluck } from './internal';
+import { bindAction, callbackFire } from './support';
 
-export function _fnSortInit(settings: ISettings): void {
+export function sortInit(settings: ISettings): void {
   const notSelector =
-    ':not([data-dt-order="disable"]):not([data-dt-order="icon-only"])';
+    ':not([data-ct-order="disable"]):not([data-ct-order="icon-only"])';
   const selector = `tr${notSelector} th${notSelector}, tr${notSelector} td${notSelector}`;
 
   // Click event handler to add / remove sorting
-  _fnBindAction(settings.tHeadElement, selector, function (e) {
+  bindAction(settings.tHeadElement, selector, function (e) {
     let run = false;
-    const idx = _fnColumnsFromHeader(e.target)[0];
+    const idx = getColumnsFromHeader(e.target)[0];
 
-    var ret = _fnSortAdd(settings, idx);
+    var ret = sortAdd(settings, idx);
 
     if (ret !== false) {
       run = true;
     }
 
     if (run) {
-      _fnSort(settings);
-      _fnSortDisplay(settings, settings.display);
+      sort(settings);
+      sortDisplay(settings, settings.display);
 
-      _fnReDraw(settings, false);
+      redraw(settings, false);
     }
   });
 }
@@ -35,7 +35,7 @@ export function _fnSortInit(settings: ISettings): void {
  * @param settings Capytable settings object
  * @param display Display array to sort
  */
-function _fnSortDisplay(settings: ISettings, display: number[]): void {
+function sortDisplay(settings: ISettings, display: number[]): void {
   if (display.length < 2) {
     return;
   }
@@ -65,7 +65,7 @@ function _fnSortDisplay(settings: ISettings, display: number[]): void {
  * @param settings Capytable settings object
  * @returns Array of the new display indexes
  */
-export function _fnSort(settings: ISettings): number[] {
+export function sort(settings: ISettings): number[] {
   var aiOrig: any[] = [],
     data = settings.data,
     displayMaster = settings.displayMaster;
@@ -76,7 +76,7 @@ export function _fnSort(settings: ISettings): number[] {
 
   if (aSort) {
     // Load the data needed for the sort, for each cell
-    _fnSortData(settings, aSort[0]);
+    sortData(settings, aSort[0]);
 
     // Reset the initial positions on each pass so we get a stable sort
     for (let i = 0; i < displayMaster.length; i++) {
@@ -127,7 +127,7 @@ export function _fnSort(settings: ISettings): number[] {
     });
   }
 
-  _fnCallbackFire(settings, null, 'order', [settings, aSort]);
+  callbackFire(settings, null, 'order', [settings, aSort]);
 
   return displayMaster;
 }
@@ -138,7 +138,7 @@ export function _fnSort(settings: ISettings): number[] {
  * @param colIdx column sorting index
  * @returns false if sorting is disabled for the column, otherwise true
  */
-function _fnSortAdd(settings: ISettings, colIdx: number): boolean {
+function sortAdd(settings: ISettings, colIdx: number): boolean {
   var col = settings.columns[colIdx];
   var sorting = settings.order;
 
@@ -175,7 +175,7 @@ function _fnSortAdd(settings: ISettings, colIdx: number): boolean {
  * when bSort and bSortClasses are false
  * @param settings Capytable settings object
  */
-export function _fnSortingClasses(settings: ISettings): void {
+export function adjustSortingClasses(settings: ISettings): void {
   const oldSort = settings.lastOrder;
   const sort = settings.order;
 
@@ -183,14 +183,14 @@ export function _fnSortingClasses(settings: ISettings): void {
     // Remove old sorting classes
     if (oldSort) {
       // Remove column sorting
-      _pluck(settings.data, 'cells', oldSort[0]).forEach((cell) =>
+      pluck(settings.data, 'cells', oldSort[0]).forEach((cell) =>
         cell.classList.remove('sorting'),
       );
     }
 
     // Add new column sorting
     if (sort) {
-      _pluck(settings.data, 'cells', sort[0]).forEach((cell) =>
+      pluck(settings.data, 'cells', sort[0]).forEach((cell) =>
         cell.classList.remove('sorting'),
       );
     }
@@ -201,7 +201,7 @@ export function _fnSortingClasses(settings: ISettings): void {
 
 // Get the data to sort a column, be it from cache, fresh (populating the
 // cache), or from a sort formatter
-function _fnSortData(settings: ISettings, colIdx: number): void {
+function sortData(settings: ISettings, colIdx: number): void {
   // Use / populate cache
   var data = settings.data;
 
@@ -219,9 +219,9 @@ function _fnSortData(settings: ISettings, colIdx: number): void {
     }
 
     if (!row._sortData[colIdx]) {
-      const cellData = _fnGetCellData(settings, i, colIdx, 'sort');
+      const cellData = getCellData(settings, i, colIdx, 'sort');
 
-      row._sortData[colIdx] = _empty(cellData) ? '' : cellData.toLowerCase();
+      row._sortData[colIdx] = isEmpty(cellData) ? '' : cellData.toLowerCase();
     }
   }
 }

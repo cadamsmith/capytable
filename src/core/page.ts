@@ -1,6 +1,6 @@
 import { ISettings } from '../models/interfaces';
-import { _fnDraw } from './draw';
-import { _fnCallbackFire, _fnLog } from './support';
+import { draw } from './draw';
+import { callbackFire, logError } from './support';
 
 /**
  * Alter the display settings to change the page
@@ -9,7 +9,7 @@ import { _fnCallbackFire, _fnLog } from './support';
  * "next" or "last" or page number to jump to (integer)
  * @returns true if page has changed, false otherwise
  */
-export function _fnPageChange(
+export function changePage(
   settings: ISettings,
   action: string | number,
 ): boolean {
@@ -42,16 +42,16 @@ export function _fnPageChange(
   } else if (action === 'ellipsis') {
     return;
   } else {
-    _fnLog(settings, 'Unknown paging action: ' + action, 5);
+    logError(settings, 'Unknown paging action: ' + action, 5);
   }
 
   var changed = settings._displayStart !== start;
   settings._displayStart = start;
 
-  _fnCallbackFire(settings, null, changed ? 'page' : 'page-nc', [settings]);
+  callbackFire(settings, null, changed ? 'page' : 'page-nc', [settings]);
 
   if (changed) {
-    _fnDraw(settings);
+    draw(settings);
   }
 
   return changed;

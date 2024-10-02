@@ -1,8 +1,8 @@
 import { ISettings } from '../models/interfaces';
 import { Row } from '../models/row';
-import { _fnCreateTr } from './draw';
-import { _search } from './internal';
-import { _fnLog } from './support';
+import { createRow } from './draw';
+import { search } from './internal';
+import { logError } from './support';
 
 /**
  * Add one or more TR elements to the table. Generally we'd expect to
@@ -12,12 +12,12 @@ import { _fnLog } from './support';
  * @param settings - Capytable settings object
  * @returns array of indexes for the added rows
  */
-export function _fnAddTr(settings: ISettings): number[] {
+export function addRows(settings: ISettings): number[] {
   const trs = [...settings.tBodyElement.querySelectorAll(':scope > tr')];
 
   return trs.map(function (tr) {
-    const tds: any[] = [];
-    const data: any[] = [];
+    const tds: HTMLTableCellElement[] = [];
+    const data: string[] = [];
 
     let i = 0;
     let td = tr.firstChild as HTMLElement;
@@ -30,7 +30,7 @@ export function _fnAddTr(settings: ISettings): number[] {
         data[i] = contents;
         i++;
 
-        tds.push(td);
+        tds.push(td as HTMLTableCellElement);
       }
 
       td = td.nextSibling as HTMLElement;
@@ -48,7 +48,7 @@ export function _fnAddTr(settings: ISettings): number[] {
 
     /* Create the DOM information, or register it if already present */
     if (tr) {
-      _fnCreateTr(settings, rowIdx, tr as HTMLTableRowElement, tds);
+      createRow(settings, rowIdx, tr as HTMLTableRowElement, tds);
     }
 
     return rowIdx;
@@ -63,7 +63,7 @@ export function _fnAddTr(settings: ISettings): number[] {
  * @param type - data get type ('display', 'type' 'filter|search' 'sort|order')
  * @returns Cell data
  */
-export function _fnGetCellData(
+export function getCellData(
   settings: ISettings,
   rowIdx: number,
   colIdx: number,
@@ -79,7 +79,7 @@ export function _fnGetCellData(
   var cellData = rowData[col.idx];
 
   if (cellData === undefined) {
-    _fnLog(
+    logError(
       settings,
       'Requested unknown parameter ' +
         (typeof col.idx == 'function' ? '{function}' : "'" + col.idx + "'") +
@@ -98,7 +98,7 @@ export function _fnGetCellData(
   }
 
   if (type === 'filter') {
-    cellData = _search(cellData);
+    cellData = search(cellData);
   }
 
   return cellData;
