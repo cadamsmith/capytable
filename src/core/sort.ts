@@ -1,39 +1,41 @@
-import { _fnColumnsFromHeader } from './columns';
-import { _fnGetCellData } from './data';
-import { _fnReDraw } from './draw';
-import { _formatString, _pluck } from './internal';
-import { _fnBindAction, _fnCallbackFire } from './support';
+import { ISettings } from '../models/interfaces';
+import { getColumnsFromHeader } from './columns';
+import { getCellData } from './data';
+import { redraw } from './draw';
+import { isEmpty, pluck } from './internal';
+import { bindAction, callbackFire } from './support';
 
-export function _fnSortInit(settings) {
+export function sortInit(settings: ISettings): void {
   const notSelector =
-    ':not([data-dt-order="disable"]):not([data-dt-order="icon-only"])';
+    ':not([data-ct-order="disable"]):not([data-ct-order="icon-only"])';
   const selector = `tr${notSelector} th${notSelector}, tr${notSelector} td${notSelector}`;
 
   // Click event handler to add / remove sorting
-  _fnBindAction(settings.tHeadElement, selector, function (e) {
+  bindAction(settings.tHeadElement, selector, function (e) {
     let run = false;
-    const idx = _fnColumnsFromHeader(e.target)[0];
+    const idx = getColumnsFromHeader(e.target)[0];
 
-    var ret = _fnSortAdd(settings, idx);
+    var ret = sortAdd(settings, idx);
 
     if (ret !== false) {
       run = true;
     }
 
     if (run) {
-      _fnSort(settings);
-      _fnSortDisplay(settings, settings.display);
+      sort(settings);
+      sortDisplay(settings, settings.display);
 
-      _fnReDraw(settings, false);
+      redraw(settings, false);
     }
   });
 }
 
 /**
  * Sort the display array to match the master's order
- * @param {*} settings
+ * @param settings Capytable settings object
+ * @param display Display array to sort
  */
-function _fnSortDisplay(settings, display) {
+function sortDisplay(settings: ISettings, display: number[]): void {
   if (display.length < 2) {
     return;
   }
@@ -60,21 +62,21 @@ function _fnSortDisplay(settings, display) {
 
 /**
  * Change the order of the table
- *  @param {object} oSettings Capytable settings object
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @returns Array of the new display indexes
  */
-export function _fnSort(oSettings) {
+export function sort(settings: ISettings): number[] {
   var aiOrig: any[] = [],
-    data = oSettings.data,
-    displayMaster = oSettings.displayMaster;
+    data = settings.data,
+    displayMaster = settings.displayMaster;
 
   // Allow a specific column to be sorted, which will _not_ alter the display
   // master
-  const aSort = oSettings.order;
+  const aSort = settings.order;
 
   if (aSort) {
     // Load the data needed for the sort, for each cell
-    _fnSortData(oSettings, aSort[0]);
+    sortData(settings, aSort[0]);
 
     // Reset the initial positions on each pass so we get a stable sort
     for (let i = 0; i < displayMaster.length; i++) {
@@ -125,28 +127,29 @@ export function _fnSort(oSettings) {
     });
   }
 
-  _fnCallbackFire(oSettings, null, 'order', [oSettings, aSort]);
+  callbackFire(settings, null, 'order', [settings, aSort]);
 
   return displayMaster;
 }
 
 /**
  * Function to run on user sort request
- *  @param {object} settings Capytable settings object
- *  @param {int} colIdx column sorting index
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @param colIdx column sorting index
+ * @returns false if sorting is disabled for the column, otherwise true
  */
-function _fnSortAdd(settings, colIdx) {
+function sortAdd(settings: ISettings, colIdx: number): boolean {
   var col = settings.columns[colIdx];
   var sorting = settings.order;
-  var nextSortIdx;
-  var next = function (a) {
-    var idx = a._idx;
-    if (idx === undefined) {
-      idx = settings.orderSequence.indexOf(a[1]);
-    }
 
-    return idx + 1 < settings.orderSequence.length ? idx + 1 : 0;
+  var next = function (dir: string) {
+    if (dir === 'asc') {
+      return 'desc';
+    } else if (dir === 'desc') {
+      return '';
+    } else {
+      return 'asc';
+    }
   };
 
   if (!col.orderable) {
@@ -156,26 +159,23 @@ function _fnSortAdd(settings, colIdx) {
   // If appending the sort then we are multi-column sorting
   if (sorting && sorting[0] == colIdx) {
     // Single column - already sorting on this column, modify the sort
-    nextSortIdx = next(sorting);
-
-    sorting[1] = settings.orderSequence[nextSortIdx];
-    sorting._idx = nextSortIdx;
+    sorting[1] = next(sorting[1]);
   } else {
     // Single column - sort only on this column
     sorting = [colIdx, settings.orderSequence[0]];
-    sorting._idx = 0;
   }
 
   settings.order = sorting;
+
+  return true;
 }
 
 /**
  * Set the sorting classes on table's body, Note: it is safe to call this function
  * when bSort and bSortClasses are false
- *  @param {object} oSettings Capytable settings object
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
  */
-export function _fnSortingClasses(settings) {
+export function adjustSortingClasses(settings: ISettings): void {
   const oldSort = settings.lastOrder;
   const sort = settings.order;
 
@@ -183,14 +183,14 @@ export function _fnSortingClasses(settings) {
     // Remove old sorting classes
     if (oldSort) {
       // Remove column sorting
-      _pluck(settings.data, 'cells', oldSort[0]).forEach((cell) =>
+      pluck(settings.data, 'cells', oldSort[0]).forEach((cell) =>
         cell.classList.remove('sorting'),
       );
     }
 
     // Add new column sorting
     if (sort) {
-      _pluck(settings.data, 'cells', sort[0]).forEach((cell) =>
+      pluck(settings.data, 'cells', sort[0]).forEach((cell) =>
         cell.classList.remove('sorting'),
       );
     }
@@ -201,10 +201,8 @@ export function _fnSortingClasses(settings) {
 
 // Get the data to sort a column, be it from cache, fresh (populating the
 // cache), or from a sort formatter
-function _fnSortData(settings, colIdx) {
+function sortData(settings: ISettings, colIdx: number): void {
   // Use / populate cache
-  var row, cellData;
-
   var data = settings.data;
 
   // iterate over the rows getting the data to be sorted
@@ -214,16 +212,16 @@ function _fnSortData(settings, colIdx) {
       continue;
     }
 
-    row = data[i];
+    const row = data[i];
 
     if (!row._sortData) {
       row._sortData = [];
     }
 
     if (!row._sortData[colIdx]) {
-      cellData = _fnGetCellData(settings, i, colIdx, 'sort');
+      const cellData = getCellData(settings, i, colIdx, 'sort');
 
-      row._sortData[colIdx] = _formatString(cellData);
+      row._sortData[colIdx] = isEmpty(cellData) ? '' : cellData.toLowerCase();
     }
   }
 }

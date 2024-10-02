@@ -1,17 +1,16 @@
 import { ISettings } from '../models/interfaces';
-import { _fnAdjustColumnSizing, _fnColumnsSumWidth } from './columns';
-import { _fnGetRowDisplay } from './draw';
-import { _range, _stripHtml, _throttle } from './internal';
+import { adjustColumnSizing, sumColumnWidth } from './columns';
+import { getRowDisplay } from './draw';
+import { toCssUnits, range, stripHtml, throttle } from './internal';
 
 /**
  * Calculate the width of columns for the table
- *  @param {object} settings Capytable settings object
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
  */
-export function _fnCalculateColumnWidths(settings: ISettings) {
+export function calculateColumnWidths(settings: ISettings): void {
   var table = settings.tableElement,
     columns = settings.columns,
-    visibleColumns = _range(columns.length),
+    visibleColumns = range(columns.length),
     tableWidthAttr = table.getAttribute('width'), // from DOM element
     tableContainer = table.parentNode!,
     columnIdx;
@@ -61,7 +60,7 @@ export function _fnCalculateColumnWidths(settings: ISettings) {
     (el) =>
       function () {
         // Get the `width` from the header layout
-        var width = _fnColumnsSumWidth(settings, el, true);
+        var width = sumColumnWidth(settings, el, true);
 
         if (width) {
           // Need to set the width and min-width, otherwise the browser
@@ -79,13 +78,13 @@ export function _fnCalculateColumnWidths(settings: ISettings) {
   for (let i = 0; i < visibleColumns.length; i++) {
     columnIdx = visibleColumns[i];
 
-    var longest = _fnGetMaxLenString(settings, columnIdx);
+    var longest = getMaxLenString(settings, columnIdx);
     var text = longest;
     var insert =
       longest.indexOf('<') === -1 ? document.createTextNode(text) : text;
 
     const td = document.createElement('td');
-    td.appendChild(insert);
+    td.appendChild(insert as Node);
     tr.appendChild(td);
   }
 
@@ -124,10 +123,10 @@ export function _fnCalculateColumnWidths(settings: ISettings) {
     total += bounding;
 
     // Width for each column to use
-    columns[visibleColumns[i]].width = _fnStringToCss(bounding);
+    columns[visibleColumns[i]].width = toCssUnits(bounding);
   }
 
-  table.style.width = _fnStringToCss(total);
+  table.style.width = toCssUnits(total);
 
   // Finished with the table - ditch it
   holder.remove();
@@ -137,13 +136,13 @@ export function _fnCalculateColumnWidths(settings: ISettings) {
   // resized. Use the width attr rather than CSS, since we can't know if the
   // CSS is a relative value or absolute - DOM read is always px.
   if (tableWidthAttr) {
-    table.style.width = _fnStringToCss(tableWidthAttr);
+    table.style.width = toCssUnits(tableWidthAttr);
   }
 
   if (tableWidthAttr && !settings._reszEvt) {
     window.addEventListener(
       'resize',
-      _throttle(() => _fnAdjustColumnSizing(settings)),
+      throttle(() => adjustColumnSizing(settings)),
     );
     settings._reszEvt = true;
   }
@@ -151,35 +150,28 @@ export function _fnCalculateColumnWidths(settings: ISettings) {
 
 /**
  * Get the maximum strlen for each data column
- *  @param {object} settings Capytable settings object
- *  @param {int} colIdx column of interest
- *  @returns {string} string of the max length
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @param colIdx column of interest
+ * @returns longest string in the column
  */
-function _fnGetMaxLenString(settings, colIdx) {
+function getMaxLenString(settings: ISettings, colIdx: number): string {
   var column = settings.columns[colIdx];
 
   if (!column.maxLenString) {
-    var s,
-      max = '',
+    var max = '',
       maxLen = -1;
 
     for (var i = 0, ien = settings.displayMaster.length; i < ien; i++) {
-      var rowIdx = settings.displayMaster[i];
-      var data = _fnGetRowDisplay(settings, rowIdx)[colIdx];
-
-      var cellString =
-        data && typeof data === 'object' && data.nodeType
-          ? data.innerHTML
-          : data + '';
+      const rowIdx = settings.displayMaster[i];
+      const data = getRowDisplay(settings, rowIdx)[colIdx];
 
       // Remove id / name attributes from elements so they
       // don't interfere with existing elements
-      cellString = cellString
+      const cellString = data
         .replace(/id=".*?"/g, '')
         .replace(/name=".*?"/g, '');
 
-      s = _stripHtml(cellString).replace(/&nbsp;/g, ' ');
+      const s = stripHtml(cellString).replace(/&nbsp;/g, ' ');
 
       if (s.length > maxLen) {
         // We want the HTML in the string, but the length that
@@ -196,30 +188,10 @@ function _fnGetMaxLenString(settings, colIdx) {
 }
 
 /**
- * Append a CSS unit (only if required) to a string
- *  @param {string} value to css-ify
- *  @returns {string} value with css unit
- *  @memberof Capytable#oApi
- */
-function _fnStringToCss(s) {
-  if (s === null) {
-    return '0px';
-  }
-
-  if (typeof s == 'number') {
-    return s < 0 ? '0px' : s + 'px';
-  }
-
-  // Check it has a unit character already
-  return s.match(/\d$/) ? s + 'px' : s;
-}
-
-/**
  * Re-insert the `col` elements for current visibility
- *
- * @param {*} settings DT settings
+ * @param settings Capytable settings object
  */
-export function _colGroup(settings) {
+export function insertColGroup(settings: ISettings): void {
   var cols = settings.columns;
 
   settings.colgroup.innerHTML = '';

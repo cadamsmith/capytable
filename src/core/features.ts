@@ -1,21 +1,35 @@
-import { _fnDraw } from './draw';
-import { _fnFilterComplete } from './filter';
-import { _formatNumber, _range } from './internal';
-import { _fnLengthChange } from './length';
-import { _fnPageChange } from './page';
-import { _fnBindActionWithData, _fnCallbackFire, _fnMacros } from './support';
+import { ISettings } from '../models/interfaces';
+import { draw } from './draw';
+import { filterComplete } from './filter';
+import { formatNumber, range } from './internal';
+import { changeLength } from './length';
+import { changePage } from './page';
+import {
+  bindActionWithData,
+  callbackFire,
+  applyLanguageMacros,
+} from './support';
 
-export function _renderFeature(settings, feature) {
-  let element;
+/**
+ * Render a feature element
+ * @param settings Capytable settings object
+ * @param feature name of the feature to render
+ * @returns div element containing the feature, or null if not a valid feature
+ */
+export function renderFeature(
+  settings: ISettings,
+  feature: string,
+): HTMLDivElement {
+  let element: HTMLDivElement;
 
   if (feature === 'info') {
-    element = _renderInfo(settings);
+    element = renderInfo(settings);
   } else if (feature === 'pageLength') {
-    element = _renderPageLength(settings);
+    element = renderPageLength(settings);
   } else if (feature === 'paging') {
-    element = _renderPaging(settings);
+    element = renderPaging(settings);
   } else if (feature === 'search') {
-    element = _renderSearch(settings);
+    element = renderSearch(settings);
   } else {
     console.error(`Feature ${feature} not found`);
     return null;
@@ -27,19 +41,24 @@ export function _renderFeature(settings, feature) {
   return divElement;
 }
 
-function _renderInfo(settings) {
+/**
+ * render the table information element (i.e. "Showing 1 to 10 of 57 entries")
+ * @param settings Capytable settings object
+ * @returns div element containing the info element
+ */
+function renderInfo(settings: ISettings): HTMLDivElement {
   const tid = settings.tableId;
 
   const n = document.createElement('div');
-  n.className = 'dt-info';
+  n.className = 'ct-info';
 
   // Update display on each draw
-  settings.drawCallbacks.push(function (s) {
-    _fnUpdateInfo(s, n);
+  settings.drawCallbacks.push(function (s: ISettings) {
+    updateInfo(s, n);
   });
 
   // For the first info display in the table, we add a callback and aria information.
-  if (!settings._infoEl) {
+  if (!settings._infoElement) {
     n.setAttribute('aria-live', 'polite');
     n.setAttribute('id', `${tid}_info`);
     n.setAttribute('role', 'status');
@@ -47,7 +66,7 @@ function _renderInfo(settings) {
     // Table is described by our info div
     settings.tableElement.setAttribute('aria-describedby', `${tid}_info`);
 
-    settings._infoEl = n;
+    settings._infoElement = n;
   }
 
   return n;
@@ -55,10 +74,9 @@ function _renderInfo(settings) {
 
 /**
  * Update the information elements in the display
- *  @param {object} settings Capytable settings object
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
  */
-function _fnUpdateInfo(settings, node) {
+function updateInfo(settings: ISettings, node: HTMLDivElement): void {
   var max = settings.total(),
     total = settings.totalDisplayed(),
     out = total
@@ -71,16 +89,16 @@ function _fnUpdateInfo(settings, node) {
   }
 
   // Convert the macros
-  out = _fnMacros(settings, out);
+  out = applyLanguageMacros(settings, out);
 
   node.innerHTML = out;
 
-  _fnCallbackFire(settings, null, 'info', [settings, node, out]);
+  callbackFire(settings, null, 'info', [settings, node, out]);
 }
 
 var __lengthCounter = 0;
 
-function _renderPageLength(settings) {
+function renderPageLength(settings: ISettings): HTMLDivElement {
   var features = settings.features;
 
   // For compatibility with the legacy `pageLength` top level option
@@ -101,11 +119,11 @@ function _renderPageLength(settings) {
   // Wrapper element - use a span as a holder for where the select will go
   var tmpId = `tmp-` + +new Date();
   var div = document.createElement('div');
-  div.classList.add('dt-length');
+  div.classList.add('ct-length');
   div.innerHTML = str.replace('_MENU_', `<span id="${tmpId}"></span>`);
 
   // Save text node content for macro updating
-  var textNodes: any[] = [];
+  var textNodes: { el: ChildNode; text: string }[] = [];
   div.querySelector('label')!.childNodes.forEach(function (el) {
     if (el.nodeType === Node.TEXT_NODE) {
       textNodes.push({
@@ -118,7 +136,7 @@ function _renderPageLength(settings) {
   // Update the label text in case it has an entries value
   const updateEntries = function () {
     textNodes.forEach(function (node) {
-      node.el.textContent = _fnMacros(settings, node.text);
+      node.el.textContent = applyLanguageMacros(settings, node.text);
     });
   };
 
@@ -126,17 +144,17 @@ function _renderPageLength(settings) {
   const select = document.createElement('select');
   select.setAttribute('name', tableId + '_length');
   select.setAttribute('aria-controls', tableId);
-  select.className = 'dt-input';
+  select.className = 'ct-input';
 
   for (let i = 0; i < menu.length; i++) {
-    select[i] = new Option(_formatNumber(menu[i]), menu[i]);
+    select[i] = new Option(formatNumber(menu[i]), menu[i].toString());
   }
 
   // add for and id to label and input
   div
     .querySelector('label')!
-    .setAttribute('for', 'dt-length-' + __lengthCounter);
-  select.id = 'dt-length-' + __lengthCounter;
+    .setAttribute('for', 'ct-length-' + __lengthCounter);
+  select.id = 'ct-length-' + __lengthCounter;
   __lengthCounter++;
 
   // Swap in the select list
@@ -144,16 +162,18 @@ function _renderPageLength(settings) {
 
   // Can't use `select` variable as user might provide their own and the
   // reference is broken by the use of outerHTML
-  select.value = settings._displayLength;
+  select.value = settings._displayLength.toString();
   select.addEventListener('change', function () {
-    _fnLengthChange(settings, this.value);
-    _fnDraw(settings);
+    changeLength(settings, this.value);
+    draw(settings);
   });
 
   // Update node value whenever anything changes the table's length
   settings.tableElement.addEventListener('length.dt', function (e) {
-    if (settings === e.detail.settings) {
-      div.querySelector('select')!.value = e.detail.len;
+    const event = e as CustomEvent;
+
+    if (settings === event.detail.settings) {
+      div.querySelector('select')!.value = event.detail.len;
 
       // Resolve plurals in the text for the new length
       updateEntries();
@@ -165,7 +185,7 @@ function _renderPageLength(settings) {
   return div;
 }
 
-function _renderPaging(settings) {
+function renderPaging(settings: ISettings): HTMLDivElement {
   // Don't show the paging input if the table doesn't have paging enabled
   if (!settings.features.paging) {
     return null;
@@ -173,12 +193,12 @@ function _renderPaging(settings) {
 
   // create the host element for the controls
   const host = document.createElement('div');
-  host.classList.add('dt-paging');
+  host.classList.add('ct-paging');
   const nav = document.createElement('nav');
   nav.setAttribute('aria-label', 'pagination');
   host.appendChild(nav);
 
-  var draw = () => _pagingDraw(settings, nav, 7);
+  var draw = () => pagingDraw(settings, nav, 7);
 
   settings.drawCallbacks.push(draw);
 
@@ -188,7 +208,11 @@ function _renderPaging(settings) {
   return host;
 }
 
-function _pagingDraw(settings, host, buttons) {
+function pagingDraw(
+  settings: ISettings,
+  host: HTMLElement,
+  buttons: number,
+): void {
   if (!settings._initComplete) {
     return;
   }
@@ -211,7 +235,7 @@ function _pagingDraw(settings, host, buttons) {
     pages = all ? 1 : Math.ceil(visRecords / len),
     buttonArray = defaultPaging
       .map(function (val) {
-        return val === 'numbers' ? _pagingNumbers(page, pages, buttons) : val;
+        return val === 'numbers' ? pagingNumbers(page, pages, buttons) : val;
       })
       .flat();
 
@@ -220,8 +244,8 @@ function _pagingDraw(settings, host, buttons) {
   for (var i = 0; i < buttonArray.length; i++) {
     var button = buttonArray[i];
 
-    var btnInfo = _pagingButtonInfo(button, page, pages);
-    var btn = _renderPagingButton(
+    var btnInfo = pagingButtonInfo(button, page, pages);
+    var btn = renderPagingButton(
       button,
       btnInfo.display,
       btnInfo.active,
@@ -236,78 +260,82 @@ function _pagingDraw(settings, host, buttons) {
           : null;
 
     // Common attributes
-    btn.clicker.setAttribute('aria-controls', settings.tableId);
-    btn.clicker.setAttribute('aria-disabled', btnInfo.disabled);
-    btn.clicker.setAttribute('aria-current', btnInfo.active ? 'page' : null);
-    btn.clicker.setAttribute('aria-label', ariaLabel);
-    btn.clicker.setAttribute('data-dt-idx', ariaLabel);
-    btn.clicker.setAttribute('tabIndex', btnInfo.disabled ? -1 : null);
+    btn.setAttribute('aria-controls', settings.tableId);
+    btn.setAttribute('aria-disabled', btnInfo.disabled.toString());
+    btn.setAttribute('aria-current', btnInfo.active ? 'page' : null);
+    btn.setAttribute('aria-label', ariaLabel);
+    btn.setAttribute('data-ct-idx', ariaLabel);
+    btn.setAttribute('tabIndex', btnInfo.disabled ? '-1' : null);
 
     if (typeof button !== 'number') {
-      btn.clicker.classList.add(button);
+      btn.classList.add(button);
     }
 
     const action = button;
-    _fnBindActionWithData(btn.clicker, function (e) {
+    bindActionWithData(btn, function (e: Event) {
       e.preventDefault();
 
-      _fnPageChange(settings, action);
+      changePage(settings, action);
     });
 
-    buttonEls.push(btn.display);
+    buttonEls.push(btn);
   }
 
-  var activeEl = host.querySelector(':active');
+  var activeEl = host.querySelector(':active') as HTMLElement;
 
   host.replaceChildren(...buttonEls);
 
   if (activeEl) {
-    const idx = activeEl.dataset['dt-idx'];
+    const idx = activeEl.dataset['ct-idx'];
 
-    host.querySelector(`[data-dt-idx=${idx}]`).focus();
+    const focusEl = host.querySelector(`[data-ct-idx=${idx}]`) as HTMLElement;
+    focusEl.focus();
   }
 }
 
-function _renderPagingButton(buttonType, content, active, disabled) {
-  var btnClasses = ['dt-paging-button'];
-  var btn;
-
+function renderPagingButton(
+  buttonType: string,
+  content: string,
+  active: boolean,
+  disabled: boolean,
+): HTMLSpanElement | HTMLButtonElement {
+  var btnClasses = ['ct-paging-button'];
   if (active) {
     btnClasses.push('current');
   }
-
   if (disabled) {
     btnClasses.push('disabled');
   }
 
   if (buttonType === 'ellipsis') {
-    btn = document.createElement('span');
+    const btn = document.createElement('span');
     btn.classList.add('ellipsis');
     btn.innerHTML = content;
+
+    return btn;
   } else {
-    btn = document.createElement('button');
+    const btn = document.createElement('button');
     btn.classList.add(...btnClasses);
     btn.role = 'link';
     btn.type = 'button';
     btn.innerHTML = content;
-  }
 
-  return {
-    display: btn,
-    clicker: btn,
-  };
+    return btn;
+  }
 }
 
 /**
  * Get properties for a button based on the current paging state of the table
- *
- * @param {*} settings DT settings object
- * @param {*} button The button type in question
- * @param {*} page Table's current page
- * @param {*} pages Number of pages
+ * @param button The button type in question
+ * @param page Table's current page
+ * @param pages Number of pages
  * @returns Info object
  */
-function _pagingButtonInfo(button, page, pages) {
+function pagingButtonInfo(
+  button: string | number,
+  page: number,
+  pages: number,
+): { display: string; active: boolean; disabled: boolean } {
   var o = {
     display: '',
     active: false,
@@ -354,7 +382,7 @@ function _pagingButtonInfo(button, page, pages) {
 
     default:
       if (typeof button === 'number') {
-        o.display = _formatNumber(button + 1);
+        o.display = formatNumber(button + 1);
 
         if (page === button) {
           o.active = true;
@@ -368,21 +396,19 @@ function _pagingButtonInfo(button, page, pages) {
 
 /**
  * Compute what number buttons to show in the paging control
- *
- * @param {*} page Current page
- * @param {*} pages Total number of pages
- * @param {*} buttons Target number of number buttons
- * @param {boolean} addFirstLast Indicate if page 1 and end should be included
+ * @param page Current page
+ * @param pages Total number of pages
+ * @param buttons Target number of number buttons
  * @returns Buttons to show
  */
-function _pagingNumbers(page, pages, buttons): string[] {
+function pagingNumbers(page: number, pages: number, buttons: number): string[] {
   var numbers: any[] = [],
     half = Math.floor(buttons / 2),
     before = 2,
     after = 1;
 
   if (pages <= buttons) {
-    numbers = _range(0, pages);
+    numbers = range(0, pages);
   } else if (buttons === 1) {
     // Single button - current page only
     numbers = [page];
@@ -391,23 +417,23 @@ function _pagingNumbers(page, pages, buttons): string[] {
     if (page <= 1) {
       numbers = [0, 1, 'ellipsis'];
     } else if (page >= pages - 2) {
-      numbers = _range(pages - 2, pages);
+      numbers = range(pages - 2, pages);
       numbers.unshift('ellipsis');
     } else {
       numbers = ['ellipsis', page, 'ellipsis'];
     }
   } else if (page <= half) {
-    numbers = _range(0, buttons - before);
+    numbers = range(0, buttons - before);
     numbers.push('ellipsis');
 
     numbers.push(pages - 1);
   } else if (page >= pages - 1 - half) {
-    numbers = _range(pages - (buttons - before), pages);
+    numbers = range(pages - (buttons - before), pages);
     numbers.unshift('ellipsis');
 
     numbers.unshift(0);
   } else {
-    numbers = _range(page - half + before, page + half - after);
+    numbers = range(page - half + before, page + half - after);
     numbers.push('ellipsis');
     numbers.unshift('ellipsis');
 
@@ -420,7 +446,7 @@ function _pagingNumbers(page, pages, buttons): string[] {
 
 var __searchCounter = 0;
 
-function _renderSearch(settings) {
+function renderSearch(settings: ISettings): HTMLDivElement {
   // Don't show the input if filtering isn't available on the table
   if (!settings.features.searching) {
     return null;
@@ -428,7 +454,7 @@ function _renderSearch(settings) {
 
   var tableId = settings.tableId;
   var previousSearch = settings.searchText;
-  var input = '<input type="search" class="dt-input"/>';
+  var input = '<input type="search" class="ct-input"/>';
 
   // We can put the <input> outside of the label if it is at the start or end
   // which helps improve accessability (not all screen readers like implicit
@@ -436,16 +462,16 @@ function _renderSearch(settings) {
   var str = '<label>Search:</label>_INPUT_';
 
   const filter = document.createElement('div');
-  filter.classList.add('dt-search');
+  filter.classList.add('ct-search');
   filter.innerHTML = str.replace(/_INPUT_/, input);
 
   // add for and id to label and input
   filter
     .querySelector('label')!
-    .setAttribute('for', 'dt-search-' + __searchCounter);
+    .setAttribute('for', 'ct-search-' + __searchCounter);
   filter
     .querySelector('input')!
-    .setAttribute('id', 'dt-search-' + __searchCounter);
+    .setAttribute('id', 'ct-search-' + __searchCounter);
   __searchCounter++;
 
   var searchFn = function () {
@@ -455,11 +481,11 @@ function _renderSearch(settings) {
     if (val != previousSearch) {
       previousSearch = val;
 
-      _fnFilterComplete(settings, previousSearch);
+      filterComplete(settings, previousSearch);
 
       // Need to redraw, without resorting
       settings._displayStart = 0;
-      _fnDraw(settings);
+      draw(settings);
     }
   };
 

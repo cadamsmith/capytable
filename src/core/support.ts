@@ -1,13 +1,13 @@
-import { _formatNumber } from './internal';
+import { ISettings } from '../models/interfaces';
+import { formatNumber } from './internal';
 
 /**
  * Log an error message
- *  @param {object} settings Capytable settings object
- *  @param {string} msg error message
- *  @param {int} tn Technical note id to get more information about the error.
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @param msg error message
+ * @param tn Technical note id to get more information about the error.
  */
-export function _fnLog(settings, msg, tn) {
+export function logError(settings: ISettings, msg: string, tn: number) {
   msg =
     'Capytable warning: ' +
     (settings ? 'table id=' + settings.tableId + ' - ' : '') +
@@ -27,13 +27,12 @@ export function _fnLog(settings, msg, tn) {
  * Bind an event handers to allow a click or return key to activate the callback.
  * This is good for accessibility since a return on the keyboard will have the
  * same effect as a click, if the element has focus.
- *  @param {element} n Element to bind the action to
- *  @param {object|string} selector Selector (for delegated events) or data object
+ * @param n Element to bind the action to
+ * @param selector Selector (for delegated events) or data object
  *   to pass to the triggered function
- *  @param {function} fn Callback function for when the event is triggered
- *  @memberof Capytable#oApi
+ * @param fn Callback function for when the event is triggered
  */
-export function _fnBindAction(n, selector, fn) {
+export function bindAction(n: HTMLElement, selector: string, fn): void {
   delegateEvent(n, 'click', selector, fn);
 
   delegateEvent(n, 'keypress', selector, function (e) {
@@ -46,19 +45,24 @@ export function _fnBindAction(n, selector, fn) {
   delegateEvent(n, 'selectstart', selector, () => false);
 }
 
-function delegateEvent(el, evt, sel, handler) {
+function delegateEvent(
+  el: HTMLElement,
+  evt: string,
+  sel: string,
+  handler,
+): void {
   el.addEventListener(evt, function (event) {
-    var t = event.target;
+    var t = event.target as HTMLElement;
     while (t && t !== this) {
       if (t.matches && t.matches(sel)) {
         handler.call(t, event);
       }
-      t = t.parentNode;
+      t = t.parentNode as HTMLElement;
     }
   });
 }
 
-export function _fnBindActionWithData(n, fn) {
+export function bindActionWithData(n: HTMLElement, fn): void {
   n.addEventListener('click', (e) => fn(e));
   n.addEventListener('keypress', (e) => {
     if (e.which === 13) {
@@ -74,23 +78,22 @@ export function _fnBindActionWithData(n, fn) {
  * callback array store is done backwards! Further note that you do not want to
  * fire off triggers in time sensitive applications (for example cell creation)
  * as its slow.
- *  @param {object} settings Capytable settings object
- *  @param {string} callbackArr Name of the array storage for the callbacks in
+ *  @param settings Capytable settings object
+ *  @param callbackArr Name of the array storage for the callbacks in
  *      oSettings
- *  @param {string} eventName Name of the jQuery custom event to trigger. If
+ *  @param eventName Name of the jQuery custom event to trigger. If
  *      null no trigger is fired
- *  @param {array} args Array of arguments to pass to the callback function /
+ *  @param args Array of arguments to pass to the callback function /
  *      trigger
- *  @param {boolean} [bubbles] True if the event should bubble
- *  @memberof Capytable#oApi
+ *  @param bubbles True if the event should bubble
  */
-export function _fnCallbackFire(
-  settings,
-  callbackArr,
-  eventName,
-  args,
+export function callbackFire(
+  settings: ISettings,
+  callbackArr: string,
+  eventName: string,
+  args: any[],
   bubbles = false,
-) {
+): void {
   if (callbackArr) {
     settings[callbackArr]
       .slice()
@@ -114,12 +117,11 @@ export function _fnCallbackFire(
 
 /**
  * Common replacement for language strings
- *
- * @param {*} settings DT settings object
- * @param {*} str String with values to replace
- * @returns String
+ * @param settings Capytable settings object
+ * @param str String with values to replace
+ * @returns replaced string
  */
-export function _fnMacros(settings, str) {
+export function applyLanguageMacros(settings: ISettings, str: string): string {
   // When infinite scrolling, we are always starting at 1. _displayStart is
   // used only internally
   var start = settings._displayStart + 1,
@@ -129,12 +131,12 @@ export function _fnMacros(settings, str) {
     all = len === -1;
 
   return str
-    .replace(/_START_/g, _formatNumber(start))
-    .replace(/_END_/g, _formatNumber(settings.displayEnd()))
-    .replace(/_MAX_/g, _formatNumber(max))
-    .replace(/_TOTAL_/g, _formatNumber(vis))
-    .replace(/_PAGE_/g, _formatNumber(all ? 1 : Math.ceil(start / len)))
-    .replace(/_PAGES_/g, _formatNumber(all ? 1 : Math.ceil(vis / len)))
+    .replace(/_START_/g, formatNumber(start))
+    .replace(/_END_/g, formatNumber(settings.displayEnd()))
+    .replace(/_MAX_/g, formatNumber(max))
+    .replace(/_TOTAL_/g, formatNumber(vis))
+    .replace(/_PAGE_/g, formatNumber(all ? 1 : Math.ceil(start / len)))
+    .replace(/_PAGES_/g, formatNumber(all ? 1 : Math.ceil(vis / len)))
     .replace(/_ENTRIES_/g, 'entries')
     .replace(/_ENTRIES-MAX_/g, 'entries')
     .replace(/_ENTRIES-TOTAL_/g, 'entries');

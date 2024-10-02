@@ -1,26 +1,26 @@
 import { Column } from '../models/column';
 import { ISettings } from '../models/interfaces';
-import { _fnCalculateColumnWidths } from './sizing';
-import { _fnCallbackFire } from './support';
+import { calculateColumnWidths } from './sizing';
+import { callbackFire } from './support';
 
 /**
  * Add columns to the list used for the table with default values
- *  @param {object} oSettings Capytable settings object
- *  @memberof Capytable#oApi
+ * @param settings - Capytable settings object
+ * @param length - Number of columns to add
  */
-export function _fnAddColumns(oSettings: ISettings, length: number) {
+export function addColumns(settings: ISettings, length: number): void {
   for (let i = 0; i < length; i++) {
     // Add column to columns array
-    var iCol = oSettings.columns.length;
+    var iCol = settings.columns.length;
 
     const colElement = document.createElement('col');
-    colElement.setAttribute('data-dt-column', iCol.toString());
+    colElement.setAttribute('data-ct-column', iCol.toString());
 
     var oCol = new Column(iCol, colElement);
-    oSettings.columns.push(oCol);
+    settings.columns.push(oCol);
 
     /* Feature sorting overrides column specific when off */
-    if (!oSettings.features.ordering) {
+    if (!settings.features.ordering) {
       oCol.orderable = false;
     }
   }
@@ -29,16 +29,15 @@ export function _fnAddColumns(oSettings: ISettings, length: number) {
 /**
  * Adjust the table column widths for new data. Note: you would probably want to
  * do a redraw after calling this function!
- *  @param {object} settings Capytable settings object
- *  @memberof Capytable#oApi
+ * @param settings - Capytable settings object
  */
-export function _fnAdjustColumnSizing(settings) {
-  _fnCalculateColumnWidths(settings);
+export function adjustColumnSizing(settings: ISettings): void {
+  calculateColumnWidths(settings);
 
   var cols = settings.columns;
 
   for (var i = 0; i < cols.length; i++) {
-    var width = _fnColumnsSumWidth(settings, [i], false);
+    var width = sumColumnWidth(settings, [i], false);
 
     // Need to set the min-width, otherwise the browser might try to collapse
     // it further
@@ -46,16 +45,15 @@ export function _fnAdjustColumnSizing(settings) {
     cols[i].colElement.style.minWidth = width;
   }
 
-  _fnCallbackFire(settings, null, 'column-sizing', [settings]);
+  callbackFire(settings, null, 'column-sizing', [settings]);
 }
 
 /**
  * Get the number of visible columns
- *  @param {object} oSettings Capytable settings object
- *  @returns {int} i the number of visible columns
- *  @memberof Capytable#oApi
+ *  @param settings - Capytable settings object
+ *  @returns the number of visible columns
  */
-export function _fnVisibleColumns(settings) {
+export function countVisibleColumns(settings: ISettings): number {
   var layout = settings.header;
   var vis = 0;
 
@@ -72,19 +70,22 @@ export function _fnVisibleColumns(settings) {
 
 /**
  * Get the width for a given set of columns
- *
- * @param {*} settings Capytable settings object
- * @param {*} targets Columns - comma separated string or array of numbers
- * @param {*} original Use the original width (true) or calculated (false)
+ * @param settings - Capytable settings object
+ * @param targets - Columns - comma separated string or array of numbers
+ * @param original - Use the original width (true) or calculated (false)
  * @returns Combined CSS value
  */
-export function _fnColumnsSumWidth(settings, targets, original) {
+export function sumColumnWidth(
+  settings: ISettings,
+  targets,
+  original: boolean,
+): string {
   if (!Array.isArray(targets)) {
-    targets = _fnColumnsFromHeader(targets);
+    targets = getColumnsFromHeader(targets);
   }
 
   var sum = 0;
-  var unit;
+  var unit: string;
   var columns = settings.columns;
 
   for (let i = 0; i < targets.length; i++) {
@@ -109,12 +110,12 @@ export function _fnColumnsSumWidth(settings, targets, original) {
   return sum + unit;
 }
 
-export function _fnColumnsFromHeader(cell) {
-  const attr = cell.closest('[data-dt-column]').getAttribute('data-dt-column');
+export function getColumnsFromHeader(cell: HTMLTableCellElement): number[] {
+  const attr = cell.closest('[data-ct-column]').getAttribute('data-ct-column');
 
   if (!attr) {
     return [];
   }
 
-  return attr.split(',').map((val) => val * 1);
+  return attr.split(',').map((val) => Number(val));
 }

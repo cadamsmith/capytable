@@ -1,6 +1,12 @@
-import { _fnCallbackFire } from './support';
+import { ISettings } from '../models/interfaces';
+import { callbackFire } from './support';
 
-export function _fnLengthChange(settings, val) {
+/**
+ * recalculate the display length and adjust the start point
+ * @param settings Capytable settings object
+ * @param val new display length
+ */
+export function changeLength(settings: ISettings, val: string): void {
   var len = parseInt(val, 10);
   settings._displayLength = len;
 
@@ -23,5 +29,5 @@ export function _fnLengthChange(settings, val) {
   settings._displayStart = start;
 
   // Fire length change event
-  _fnCallbackFire(settings, null, 'length', [settings, len]);
+  callbackFire(settings, null, 'length', [settings, len]);
 }

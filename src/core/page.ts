@@ -1,16 +1,18 @@
-import { _fnDraw } from './draw';
-import { _fnCallbackFire, _fnLog } from './support';
+import { ISettings } from '../models/interfaces';
+import { draw } from './draw';
+import { callbackFire, logError } from './support';
 
 /**
  * Alter the display settings to change the page
- *  @param {object} settings Capytable settings object
- *  @param {string|int} action Paging action to take: "first", "previous",
- *    "next" or "last" or page number to jump to (integer)
- *  @param [bool] redraw Automatically draw the update or not
- *  @returns {bool} true page has changed, false - no change
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @param action Paging action to take: "first", "previous",
+ * "next" or "last" or page number to jump to (integer)
+ * @returns true if page has changed, false otherwise
  */
-export function _fnPageChange(settings, action) {
+export function changePage(
+  settings: ISettings,
+  action: string | number,
+): boolean {
   var start = settings._displayStart,
     len = settings._displayLength,
     records = settings.totalDisplayed();
@@ -40,16 +42,16 @@ export function _fnPageChange(settings, action) {
   } else if (action === 'ellipsis') {
     return;
   } else {
-    _fnLog(settings, 'Unknown paging action: ' + action, 5);
+    logError(settings, 'Unknown paging action: ' + action, 5);
   }
 
   var changed = settings._displayStart !== start;
   settings._displayStart = start;
 
-  _fnCallbackFire(settings, null, changed ? 'page' : 'page-nc', [settings]);
+  callbackFire(settings, null, changed ? 'page' : 'page-nc', [settings]);
 
   if (changed) {
-    _fnDraw(settings);
+    draw(settings);
   }
 
   return changed;

@@ -1,15 +1,15 @@
-import { _fnGetCellData } from './data';
-import { _fnCallbackFire } from './support';
+import { ISettings } from '../models/interfaces';
+import { getCellData } from './data';
+import { callbackFire } from './support';
 
 /**
  * Filter the table using both the global filter and column based filtering
- *  @param {object} settings Capytable settings object
- *  @param {string} search filter string
- *  @memberof Capytable#oApi
+ * @param settings Capytable settings object
+ * @param search filter string
  */
-export function _fnFilterComplete(settings, search) {
+export function filterComplete(settings: ISettings, search: string): void {
   // Check if any of the rows were invalidated
-  _fnFilterData(settings);
+  filterData(settings);
 
   // Start from the full data set
   settings.display = settings.displayMaster.slice();
@@ -40,14 +40,18 @@ export function _fnFilterComplete(settings, search) {
     searchRows[i] = matched[i];
   }
 
-  _fnCallbackFire(settings, null, 'search', [settings]);
+  callbackFire(settings, null, 'search', [settings]);
 }
 
 var __filter_div = document.createElement('div');
 var __filter_div_textContent = __filter_div.textContent !== undefined;
 
-// Update the filtering data for each row if needed (by invalidation or first run)
-function _fnFilterData(settings) {
+/**
+ * Update the filtering data for each row if needed (by invalidation or first run)
+ * @param settings Capytable settings object
+ * @returns boolean if the data was invalidated
+ */
+function filterData(settings: ISettings): boolean {
   var columns = settings.columns;
   var data = settings.data;
   var column;
@@ -68,7 +72,7 @@ function _fnFilterData(settings) {
         column = columns[j];
 
         if (column.searchable) {
-          cellData = _fnGetCellData(settings, rowIdx, j, 'filter');
+          cellData = getCellData(settings, rowIdx, j, 'filter');
 
           // Search in Capytable is string based
           if (cellData === null) {
